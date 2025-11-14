@@ -30,17 +30,22 @@ const ServerUploadSchema = z.object({
   targetDir: z.string(),
 })
 
-const OssUploadSchema = z.object({
-  provider: z.string().default('aliyun'),
-  bucket: z.string(),
-  region: z.string().optional(),
-  endpoint: z.string().optional(),
-  prefix: z.string().default('releases/'),
-  requiredPrefix: z.string().optional(),
-  accessKeyId: z.string().optional(),
-  accessKeySecret: z.string().optional(),
-  securityToken: z.string().optional(),
-})
+const OssUploadSchema = z
+  .object({
+    provider: z.string().default('aliyun'),
+    bucket: z.string(),
+    region: z.string().optional(),
+    endpoint: z.string().optional(),
+    prefix: z.string().default('releases/'),
+    requiredPrefix: z.string().optional(),
+    accessKeyId: z.string().optional(),
+    accessKeySecret: z.string().optional(),
+    securityToken: z.string().optional(),
+  })
+  .transform((obj) => ({
+    ...obj,
+    requiredPrefix: obj.requiredPrefix ?? obj.prefix,
+  }))
 
 const ScpUploadSchema = z.object({
   host: z.string(),
