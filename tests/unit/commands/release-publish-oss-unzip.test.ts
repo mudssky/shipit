@@ -9,7 +9,11 @@ vi.mock('execa', () => ({
 
 vi.mock('@/providers/oss', () => ({
   createOssProvider: vi.fn(() => ({
-    download: vi.fn(async () => ({ bytes: 123, etag: 'etag123' })),
+    download: vi.fn(async (_key: string, targetPath: string) => {
+      const fs = await import('fs')
+      fs.writeFileSync(targetPath, 'x')
+      return { bytes: 1, etag: 'etag123' }
+    }),
   })),
 }))
 
