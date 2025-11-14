@@ -31,8 +31,12 @@ release
         logger.start('正在从 OSS 获取列表')
         const oss = createOssProvider(cfg)
         const items = await oss.list(cfg.prefix ?? '', limit)
-        for (const it of items) logger.log('info', it.key)
+        const rows = items.map((it) => ({
+          Key: it.key,
+          LastModified: String(it.lastModified ?? ''),
+        }))
         logger.succeed('获取列表成功')
+        console.table(rows)
         return
       }
       logger.log('info', '尚未实现的列表 Provider')
