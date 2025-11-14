@@ -1,5 +1,16 @@
 # Shipit 发布脚手架详细需求文档
 
+> 文档已按实现步骤拆分为多个子文档，建议优先阅读索引与对应步骤文档：
+> - `Shipit 实施步骤 01 - CLI 与配置基础.md`
+> - `Shipit 实施步骤 02 - Server 上传.md`
+> - `Shipit 实施步骤 03 - OSS 上传（多 Provider）.md`
+> - `Shipit 实施步骤 04 - Release 列表与发布.md`
+> - `Shipit 实施步骤 05 - 日志与错误处理.md`
+> - `Shipit 实施步骤 06 - 安全与权限.md`
+> - `Shipit 实施步骤 07 - 测试与验收.md`
+> - `Shipit 实施步骤 08 - 可扩展性与架构.md`
+> - `Shipit 实施步骤 09 - 交付物与进度索引.md`
+
 ## 背景与目标
 
 * 目标：提供一套跨平台（Windows PowerShell / Linux Bash）的项目发布脚手架，用于上传打包产物（zip）并在目标机器执行发布流程，支持可配置的前后置钩子脚本。
