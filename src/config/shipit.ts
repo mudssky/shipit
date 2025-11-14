@@ -1,4 +1,5 @@
 import { cosmiconfigSync } from 'cosmiconfig'
+import path from 'path'
 import { z } from 'zod'
 
 const MODULE_NAME = 'shipit'
@@ -9,6 +10,14 @@ const searchPlaces = [
   `${MODULE_NAME}.config.ts`,
 ]
 const explorer = cosmiconfigSync(MODULE_NAME, { searchPlaces })
+
+function searchMultiplePaths(startPaths: string[]) {
+  for (const startPath of startPaths) {
+    const result = explorer.search(startPath)
+    if (result) return result
+  }
+  return explorer.search()
+}
 
 const ArtifactSchema = z.object({
   defaultPath: z.string().default('./dist/release.zip'),
@@ -114,8 +123,16 @@ export function defineConfig<
   return config
 }
 
+let lastConfigFilepath: string | undefined
+
 function loadShipitConfig(): ShipitConfig {
-  const result = explorer.search()
+  const projectRoot = path.resolve(__dirname, '..', '..')
+  const startPaths = [
+    process.env.SHIPIT_CONFIG_DIR || process.cwd(),
+    projectRoot,
+    __dirname,
+  ]
+  const result = searchMultiplePaths(startPaths)
   if (!result || typeof result.config !== 'object' || result.config === null) {
     throw new Error(
       `Shipit configuration file not found or invalid. Expected one of [${searchPlaces.join(
@@ -123,6 +140,7 @@ function loadShipitConfig(): ShipitConfig {
       )}].`,
     )
   }
+  lastConfigFilepath = result.filepath
   return ShipitConfigSchema.parse(result.config)
 }
 
@@ -140,3 +158,11 @@ export const shipitConfig: ShipitConfig = new Proxy({} as ShipitConfig, {
     return (getShipitConfig() as any)[prop as any]
   },
 })
+
+export function getShipitConfigFilepath(): string | undefined {
+  // 触发加载以确保记录路径
+  if (!cachedConfig) {
+    cachedConfig = loadShipitConfig()
+  }
+  return lastConfigFilepath
+}

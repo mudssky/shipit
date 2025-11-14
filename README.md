@@ -17,12 +17,15 @@
   - `release.defaultProvider`、`release.targetDir`、`release.listLimit`、`release.listOutputStyle?`、`release.listLargeThreshold`
   - `hooks.beforeUpload/afterUpload/beforeRelease/afterRelease`、`hooks.shell`
 - 全局配置（可选）：`TABLE_STYLE?: 'tsv' | 'table'`（从 `@/config` 读取）
+- 读取路径优先级：`SHIPIT_CONFIG_DIR` 环境变量 > 项目根目录（如 `c:\home\Projects\frontend\node\shipit`）> 当前工作目录
 
 ## 命令
 - 上传：`shipit upload <file> [-p server|oss|scp] [-n name] [--no-hooks] [--dry-run]`
 - 列表：`shipit release list [-p server|oss] [-n limit] [--style tsv|table] [-i|--no-interactive] [--yes]`
 - 发布：`shipit release publish [name] [-p server|oss] [-d dir] [--no-hooks] [--dry-run] [-i|--no-interactive] [--yes]`
 - 下载：`shipit release download <name> [-p oss] [-o dir]`
+- 配置路径：`shipit config path`
+- 配置内容：`shipit config show`
 
 ## 输出样式优先级
 - `--style` > `shipit.release.listOutputStyle` > `global.TABLE_STYLE` > `'tsv'`
