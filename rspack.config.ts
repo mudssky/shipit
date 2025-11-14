@@ -1,5 +1,5 @@
 import { defineConfig } from '@rspack/cli'
-import '@rspack/core'
+import { rspack } from '@rspack/core'
 import path from 'path'
 // Target browsers, see: https://github.com/browserslist/browserslist
 // const targets = ['chrome >= 87', 'edge >= 88', 'firefox >= 78', 'safari >= 14']
@@ -7,6 +7,7 @@ import path from 'path'
 
 export default defineConfig({
   target: 'node',
+  devtool: 'source-map',
   entry: {
     main: './src/index.ts',
   },
@@ -15,6 +16,7 @@ export default defineConfig({
     // bufferutil: 'commonjs bufferutil',
     // 'utf-8-validate': 'commonjs utf-8-validate',
     cosmiconfig: 'commonjs cosmiconfig',
+    'proxy-agent': 'commonjs proxy-agent',
   },
   output: {
     filename: 'index.js',
@@ -43,6 +45,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  plugins: [
+    new rspack.BannerPlugin({
+      banner: '#!/usr/bin/env node',
+      raw: true,
+      entryOnly: true,
+    }),
+  ],
   module: {
     rules: [
       {
