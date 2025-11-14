@@ -24,24 +24,24 @@ class ImapClientSingleton {
   }
 }
 
-export const imapClient = ImapClientSingleton.getInstance()
-
 /**
  * 获取最近的邮件
  * @param count 需要获取的邮件数量
  * @returns 返回邮件列表
  */
 export async function getRecentEmails(count: number = 10) {
+  let client: ImapFlow | null = null
   try {
+    client = ImapClientSingleton.getInstance()
     // 连接邮箱服务器
-    await imapClient.connect()
+    await client.connect()
 
     // 选择收件箱
-    const lock = await imapClient.getMailboxLock('INBOX')
+    const lock = await client.getMailboxLock('INBOX')
 
     try {
       // 获取邮箱总消息数
-      const mailbox = await imapClient.mailboxOpen('INBOX')
+      const mailbox = await client.mailboxOpen('INBOX')
       const total = mailbox.exists
 
       // 计算起始序号，确保不会超出邮件总数
@@ -50,7 +50,7 @@ export async function getRecentEmails(count: number = 10) {
 
       // 获取指定范围的邮件
       const messages = []
-      for await (const message of imapClient.fetch(`${from}:${to}`, {
+      for await (const message of client.fetch(`${from}:${to}`, {
         uid: true,
         flags: true,
         envelope: true,
@@ -79,7 +79,9 @@ export async function getRecentEmails(count: number = 10) {
   } finally {
     // 关闭连接
     try {
-      await imapClient.logout()
+      if (client) {
+        await client.logout()
+      }
     } catch (error) {
       console.error('关闭邮箱连接失败:', error)
     }

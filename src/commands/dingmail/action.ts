@@ -5,7 +5,11 @@ export async function showMailsAction(options: any) {
     console.log('详细日志输出已启用')
   }
   try {
-    const mails = await getRecentEmails(options.mailNumber) // 使用getRecentEmails获取邮件
+    const count =
+      typeof options.mailNumber === 'number'
+        ? options.mailNumber
+        : (await import('@/config')).globalConfig.SHOW_MAIL_NUMBER
+    const mails = await getRecentEmails(count)
     if (mails.length === 0) {
       console.log('没有找到邮件。')
       return

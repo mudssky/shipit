@@ -38,7 +38,8 @@ describe('Shipit 配置加载与默认值', () => {
         search: () => undefined,
       }),
     }))
-    await expect(import('@/config/shipit')).rejects.toThrow(
+    const mod = await import('@/config/shipit')
+    expect(() => (mod.shipitConfig as any).upload).toThrow(
       /configuration file not found or invalid/i,
     )
   })

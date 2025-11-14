@@ -1,7 +1,7 @@
-import { CosmiconfigResult, cosmiconfigSync } from "cosmiconfig";
-import { z } from "zod";
-import { parseIntArg } from "@/utils";
-import packageJson from "../../package.json";
+import { CosmiconfigResult, cosmiconfigSync } from 'cosmiconfig'
+import { z } from 'zod'
+import { parseIntArg } from '@/utils'
+import packageJson from '../../package.json'
 
 // Define Zod schema for GlobalEnvConfig
 const GlobalEnvConfigSchema = z.object({
@@ -17,17 +17,17 @@ const GlobalEnvConfigSchema = z.object({
         mergeRoutes: z.array(
           z.object({
             routes: z.array(z.string()).min(2),
-          })
+          }),
         ),
-      })
+      }),
     )
     .optional(),
-});
+})
 
 // Infer the type from the schema
-export type GlobalEnvConfig = z.infer<typeof GlobalEnvConfigSchema>;
+export type GlobalEnvConfig = z.infer<typeof GlobalEnvConfigSchema>
 
-const MODULE_NAME = "shipit";
+const MODULE_NAME = 'shipit'
 const searchPlaces = [
   `${MODULE_NAME}.config.local.js`,
   `${MODULE_NAME}.config.local.ts`,
@@ -48,61 +48,74 @@ const searchPlaces = [
   `${MODULE_NAME}.config.ts`,
   // `${MODULE_NAME}.config.cts`,
   // `${MODULE_NAME}.config.mts}`,
-];
-const startPaths = [process.cwd(), __dirname];
-const explorer = cosmiconfigSync(MODULE_NAME, { searchPlaces });
+]
+const startPaths = [process.cwd(), __dirname]
+const explorer = cosmiconfigSync(MODULE_NAME, { searchPlaces })
 
 function searchMultiplePaths(startPaths: string[]) {
-  let result: CosmiconfigResult;
+  let result: CosmiconfigResult
   for (const startPath of startPaths) {
-    result = explorer.search(startPath);
+    result = explorer.search(startPath)
     if (result) {
-      return result;
+      return result
     }
   }
-  return result!;
+  return result!
 }
 // export const globalConfigSearchResult = explorer.search()
-export const globalConfigSearchResult = searchMultiplePaths(startPaths);
+export const globalConfigSearchResult = searchMultiplePaths(startPaths)
 
 // 辅助函数用于加载和校验配置
 function loadAndValidateAppConfig(): GlobalEnvConfig {
   if (
     !globalConfigSearchResult ||
-    typeof globalConfigSearchResult.config !== "object" ||
+    typeof globalConfigSearchResult.config !== 'object' ||
     globalConfigSearchResult.config === null
   ) {
     const filePath =
       globalConfigSearchResult?.filepath ||
-      `any of [${searchPlaces.join(", ")}] within the project`;
-    const errorMessage = `${packageJson.name} configuration file not found, is empty, or not a valid object. Searched at: ${filePath}. Please ensure a configuration file (e.g., 'shipit.config.js') exists and is correctly formatted.`;
-    console.error(errorMessage);
-    throw new Error(errorMessage);
+      `any of [${searchPlaces.join(', ')}] within the project`
+    const errorMessage = `${packageJson.name} configuration file not found, is empty, or not a valid object. Searched at: ${filePath}. Please ensure a configuration file (e.g., 'shipit.config.js') exists and is correctly formatted.`
+    console.error(errorMessage)
+    throw new Error(errorMessage)
   }
 
   try {
     // 使用 Zod schema 解析和校验配置
-    return GlobalEnvConfigSchema.parse(globalConfigSearchResult.config);
+    return GlobalEnvConfigSchema.parse(globalConfigSearchResult.config)
   } catch (error) {
     // 断言错误类型为 z.ZodError 以获取更详细的错误信息
-    const zodError = error as z.ZodError;
+    const zodError = error as z.ZodError
     console.error(
-      `${packageJson.name} configuration validation failed for ${globalConfigSearchResult.filepath}:`
-    );
+      `${packageJson.name} configuration validation failed for ${globalConfigSearchResult.filepath}:`,
+    )
     // 打印每个校验失败的字段路径和错误信息
     zodError.issues.forEach((issue) => {
       console.error(
-        `  - Path: ${issue.path.join(".") || "config root"}, Issue: ${
+        `  - Path: ${issue.path.join('.') || 'config root'}, Issue: ${
           issue.message
-        }`
-      );
-    });
+        }`,
+      )
+    })
     throw new Error(
-      `${packageJson.name} configuration validation failed in ${globalConfigSearchResult.filepath}. Please check the console for details.`
-    );
+      `${packageJson.name} configuration validation failed in ${globalConfigSearchResult.filepath}. Please check the console for details.`,
+    )
   }
 }
 
 // 将 globalConfig 赋值为经过校验的配置对象
 // 这替换了原来的 export const globalConfig: GlobalEnvConfig = (globalThis as any).validatedConfig;
-export const globalConfig: GlobalEnvConfig = loadAndValidateAppConfig();
+let cachedGlobalConfig: GlobalEnvConfig | null = null
+
+export function getGlobalConfig(): GlobalEnvConfig {
+  if (!cachedGlobalConfig) {
+    cachedGlobalConfig = loadAndValidateAppConfig()
+  }
+  return cachedGlobalConfig
+}
+
+export const globalConfig: GlobalEnvConfig = new Proxy({} as GlobalEnvConfig, {
+  get(_target, prop) {
+    return (getGlobalConfig() as any)[prop as any]
+  },
+})

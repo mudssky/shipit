@@ -100,10 +100,25 @@ function loadShipitConfig(): ShipitConfig {
   const result = explorer.search()
   if (!result || typeof result.config !== 'object' || result.config === null) {
     throw new Error(
-      `Shipit configuration file not found or invalid. Expected one of [${searchPlaces.join(', ')}].`,
+      `Shipit configuration file not found or invalid. Expected one of [${searchPlaces.join(
+        ', ',
+      )}].`,
     )
   }
   return ShipitConfigSchema.parse(result.config)
 }
 
-export const shipitConfig: ShipitConfig = loadShipitConfig()
+let cachedConfig: ShipitConfig | null = null
+
+export function getShipitConfig(): ShipitConfig {
+  if (!cachedConfig) {
+    cachedConfig = loadShipitConfig()
+  }
+  return cachedConfig
+}
+
+export const shipitConfig: ShipitConfig = new Proxy({} as ShipitConfig, {
+  get(_target, prop) {
+    return (getShipitConfig() as any)[prop as any]
+  },
+})

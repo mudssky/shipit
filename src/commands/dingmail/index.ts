@@ -13,8 +13,8 @@ dingmail
   .command('showMails')
   .description('显示邮件列表')
   .addOption(
-    new Option('-n, --mail-number <number>', '查看邮件数量')
-      .default(globalConfig.SHOW_MAIL_NUMBER)
-      .argParser(parseIntArg),
+    new Option('-n, --mail-number <number>', '查看邮件数量').argParser(
+      parseIntArg,
+    ),
   )
   .action(showMailsAction)
