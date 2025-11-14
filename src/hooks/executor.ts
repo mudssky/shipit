@@ -1,4 +1,4 @@
-import { spawn } from 'child_process'
+import { execa } from 'execa'
 import path from 'path'
 import { shipitConfig } from '@/config/shipit'
 import { ShipitError } from '@/utils/errors'
@@ -52,30 +52,23 @@ async function runShell(
   env: NodeJS.ProcessEnv,
   timeoutMs?: number,
 ): Promise<void> {
-  const args =
-    sh === 'powershell'
-      ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', cmd]
-      : ['-lc', cmd]
-  const bin = sh === 'powershell' ? 'powershell.exe' : '/bin/bash'
-  return new Promise((resolve, reject) => {
-    const child = spawn(bin, args, { cwd, env, stdio: 'pipe' })
-    let timer: NodeJS.Timeout | undefined
-    if (timeoutMs && timeoutMs > 0) {
-      timer = setTimeout(() => {
-        child.kill('SIGTERM')
-        reject(new ShipitError('HookTimeoutError'))
-      }, timeoutMs)
-    }
-    child.on('error', (err) => {
-      if (timer) clearTimeout(timer)
-      reject(new ShipitError(err.message))
-    })
-    child.on('exit', (code) => {
-      if (timer) clearTimeout(timer)
-      if (code && code !== 0) reject(new ShipitError('HookExitError'))
-      else resolve()
-    })
+  if (sh === 'powershell') {
+    const res = await execa(
+      'powershell.exe',
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', cmd],
+      { cwd, env, timeout: timeoutMs, buffer: true },
+    )
+    if (res.exitCode && res.exitCode !== 0)
+      throw new ShipitError('HookExitError')
+    return
+  }
+  const res = await execa('/bin/bash', ['-lc', cmd], {
+    cwd,
+    env,
+    timeout: timeoutMs,
+    buffer: true,
   })
+  if (res.exitCode && res.exitCode !== 0) throw new ShipitError('HookExitError')
 }
 
 async function runScriptTsx(
@@ -84,39 +77,20 @@ async function runScriptTsx(
   env: NodeJS.ProcessEnv,
   timeoutMs?: number,
 ): Promise<HookResult | undefined> {
-  const args = ['--loader', 'tsx', file]
-  return new Promise((resolve, reject) => {
-    const child = spawn('node', args, { cwd, env, stdio: 'pipe' })
-    let buf = ''
-    let timer: NodeJS.Timeout | undefined
-    if (timeoutMs && timeoutMs > 0) {
-      timer = setTimeout(() => {
-        child.kill('SIGTERM')
-        reject(new ShipitError('HookTimeoutError'))
-      }, timeoutMs)
-    }
-    child.stdout?.on('data', (d) => {
-      buf += String(d)
-    })
-    child.on('error', (err) => {
-      if (timer) clearTimeout(timer)
-      reject(new ShipitError(err.message))
-    })
-    child.on('exit', (code) => {
-      if (timer) clearTimeout(timer)
-      if (code && code !== 0) reject(new ShipitError('HookExitError'))
-      else {
-        try {
-          const trimmed = buf.trim()
-          if (!trimmed) return resolve(undefined)
-          const parsed = JSON.parse(trimmed)
-          resolve(parsed as HookResult)
-        } catch {
-          resolve(undefined)
-        }
-      }
-    })
+  const res = await execa('tsx', [file], {
+    cwd,
+    env,
+    timeout: timeoutMs,
+    buffer: true,
+    preferLocal: true,
   })
+  const out = String(res.stdout || '').trim()
+  if (!out) return undefined
+  try {
+    return JSON.parse(out) as HookResult
+  } catch {
+    return undefined
+  }
 }
 
 function isObjectHook(x: unknown): x is HookItemObject {
