@@ -1,4 +1,5 @@
 import fs from 'fs'
+import { createRequire } from 'module'
 import path from 'path'
 import { program } from '@/cli'
 import {
@@ -96,8 +97,34 @@ cmd
   .description('输出示例配置内容到标准输出')
   .option('--out <file>')
   .action((options: { out?: string }) => {
-    const projectRoot = path.resolve(__dirname, '..', '..', '..')
-    const examplePath = path.join(projectRoot, 'shipit.config.example.ts')
+    function resolveExamplePath(): string {
+      const req = createRequire(__filename)
+      const candidate3 = (() => {
+        try {
+          return req.resolve('@mudssky/shipit/shipit.config.example.ts')
+        } catch {
+          return null
+        }
+      })()
+      const candidates = [
+        path.resolve(__dirname, '../shipit.config.example.ts'),
+        path.resolve(__dirname, '../../shipit.config.example.ts'),
+        path.resolve(__dirname, '../../../shipit.config.example.ts'),
+        candidate3,
+        path.resolve(
+          process.cwd(),
+          'node_modules',
+          '@mudssky',
+          'shipit',
+          'shipit.config.example.ts',
+        ),
+      ].filter(Boolean) as string[]
+      for (const p of candidates) {
+        if (fs.existsSync(p)) return p
+      }
+      throw new Error(`未找到示例配置文件，已尝试: ${candidates.join(' | ')}`)
+    }
+    const examplePath = resolveExamplePath()
     try {
       const content = fs.readFileSync(examplePath, 'utf-8')
       if (options?.out) {
