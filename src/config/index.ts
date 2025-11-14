@@ -27,7 +27,7 @@ const GlobalEnvConfigSchema = z.object({
 // Infer the type from the schema
 export type GlobalEnvConfig = z.infer<typeof GlobalEnvConfigSchema>;
 
-const MODULE_NAME = "ai-cli";
+const MODULE_NAME = "shipit";
 const searchPlaces = [
   `${MODULE_NAME}.config.local.js`,
   `${MODULE_NAME}.config.local.ts`,
@@ -75,7 +75,7 @@ function loadAndValidateAppConfig(): GlobalEnvConfig {
     const filePath =
       globalConfigSearchResult?.filepath ||
       `any of [${searchPlaces.join(", ")}] within the project`;
-    const errorMessage = `AI-CLI configuration file not found, is empty, or not a valid object. Searched at: ${filePath}. Please ensure a configuration file (e.g., 'ai-cli.config.js') exists and is correctly formatted.`;
+    const errorMessage = `AI-CLI configuration file not found, is empty, or not a valid object. Searched at: ${filePath}. Please ensure a configuration file (e.g., 'shipit.config.js') exists and is correctly formatted.`;
     console.error(errorMessage);
     throw new Error(errorMessage);
   }
