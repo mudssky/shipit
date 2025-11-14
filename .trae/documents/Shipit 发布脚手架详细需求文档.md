@@ -183,6 +183,10 @@ export default {
 
 * 所有错误需具备清晰的上下文提示与修复建议（参考现有配置错误输出 `src/config/index.ts:95-107`）。
 
+* 解压错误分类与回退：
+  - 分类：`解压失败: 文件不存在`、`解压失败: 平台命令不可用或执行失败`、`解压失败: 缺少 unzip/7z 或执行失败`
+  - 回退：Windows `Expand-Archive → tar -xf`；Linux/mac `unzip → 7z`
+
 ## 安全与权限
 
 * 凭证通过 `.env` 注入（依赖已存在 `dotenv`），严禁日志输出密钥。
@@ -291,6 +295,7 @@ export default defineConfig({
 * 交互式体验（步骤14）：新增 `src/utils/interactive.ts` 并在 `release list/publish` 集成交互；`--no-interactive`、`--yes`；`release.listLargeThreshold` 默认 30 可配置；Hooks 概览按类型与数量，`--verbose` 显示详细脚本。
 * 全局输出样式（步骤15）：新增 `GlobalEnvConfig.TABLE_STYLE`，建立优先级链 `--style > release.listOutputStyle > global.TABLE_STYLE > 'tsv'`，`release.listOutputStyle` 改为可选（`src/config/index.ts`、`src/config/shipit.ts`、`src/commands/release/index.ts`）。
 * 发布（oss）：在 `release publish -p oss` 中实现“下载 → 解压到目标目录”，Windows 使用 PowerShell `Expand-Archive`，Linux 使用 `unzip`（通过 `execa` 调用）。
+  * 故障分类与回退：见“日志与错误处理”章节；失败统一抛出 `ShipitError`，附带简要上下文。
 
 使用示例：
 
