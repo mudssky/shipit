@@ -11,6 +11,7 @@
   - `'tsv'`：使用制表符分隔输出，便于脚本消费与复制；示例行格式：`Key\tLastModified`。
   - `'table'`：使用 `console.table` 渲染表格，便于人类阅读。
   - 进度提示与表格渲染顺序：先结束进度（`succeed`），再输出列表，避免进度态影响表格布局。
+  - 命令行覆盖：`shipit release list --style table|tsv` 可临时覆盖配置项。
 
 ## 发布（publish）
 - 下载（OSS → 本地临时目录）或从 Server 本地拷贝选中的 zip。
