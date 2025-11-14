@@ -1,2 +1,2 @@
-export * from './email'
 export * from './argParser'
+export * from './email'

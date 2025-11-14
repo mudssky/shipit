@@ -1,8 +1,8 @@
-import { program } from '@/cli'
 import { Option } from 'commander'
-import { showMailsAction } from './action'
+import { program } from '@/cli'
 import { globalConfig } from '@/config'
 import { parseIntArg } from '@/utils'
+import { showMailsAction } from './action'
 
 const dingmail = program
   .command('dingmail')

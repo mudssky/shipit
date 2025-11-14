@@ -1,7 +1,7 @@
-import { cosmiconfigSync } from "cosmiconfig"
-import { z } from "zod"
+import { cosmiconfigSync } from 'cosmiconfig'
+import { z } from 'zod'
 
-const MODULE_NAME = "shipit"
+const MODULE_NAME = 'shipit'
 const searchPlaces = [
   `${MODULE_NAME}.config.local.js`,
   `${MODULE_NAME}.config.local.ts`,
@@ -11,22 +11,22 @@ const searchPlaces = [
 const explorer = cosmiconfigSync(MODULE_NAME, { searchPlaces })
 
 const ArtifactSchema = z.object({
-  defaultPath: z.string().default("./dist/release.zip"),
-  nameTemplate: z.string().default("release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip"),
+  defaultPath: z.string().default('./dist/release.zip'),
+  nameTemplate: z.string().default('release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip'),
 })
 
 const ServerUploadSchema = z.object({
   endpoint: z.string(),
-  headers: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
   targetDir: z.string(),
 })
 
 const OssUploadSchema = z.object({
-  provider: z.string().default("aliyun"),
+  provider: z.string().default('aliyun'),
   bucket: z.string(),
   region: z.string().optional(),
   endpoint: z.string().optional(),
-  prefix: z.string().default("releases/"),
+  prefix: z.string().default('releases/'),
 })
 
 const ScpUploadSchema = z.object({
@@ -37,15 +37,15 @@ const ScpUploadSchema = z.object({
 })
 
 const UploadSchema = z.object({
-  defaultProvider: z.enum(["server", "oss", "scp"]).default("oss"),
+  defaultProvider: z.enum(['server', 'oss', 'scp']).default('oss'),
   server: ServerUploadSchema.optional(),
   oss: OssUploadSchema.optional(),
   scp: ScpUploadSchema.optional(),
 })
 
 const ReleaseSchema = z.object({
-  defaultProvider: z.enum(["server", "oss", "scp"]).default("oss"),
-  targetDir: z.string().default("."),
+  defaultProvider: z.enum(['server', 'oss', 'scp']).default('oss'),
+  targetDir: z.string().default('.'),
   listLimit: z.number().default(10),
 })
 
@@ -54,23 +54,38 @@ const HooksSchema = z.object({
   afterUpload: z.array(z.string()).default([]),
   beforeRelease: z.array(z.string()).default([]),
   afterRelease: z.array(z.string()).default([]),
-  shell: z.string().default(process.platform === "win32" ? "powershell" : "bash"),
+  shell: z
+    .string()
+    .default(process.platform === 'win32' ? 'powershell' : 'bash'),
 })
 
 const ShipitConfigSchema = z.object({
-  artifact: ArtifactSchema.default({}),
-  upload: UploadSchema.default({ defaultProvider: "oss" }),
-  release: ReleaseSchema.default({}),
-  hooks: HooksSchema.default({}),
+  artifact: ArtifactSchema.default(() => ({
+    defaultPath: './dist/release.zip',
+    nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
+  })),
+  upload: UploadSchema.default(() => ({ defaultProvider: 'oss' as const })),
+  release: ReleaseSchema.default(() => ({
+    defaultProvider: 'oss' as const,
+    targetDir: '.',
+    listLimit: 10,
+  })),
+  hooks: HooksSchema.default(() => ({
+    beforeUpload: [],
+    afterUpload: [],
+    beforeRelease: [],
+    afterRelease: [],
+    shell: process.platform === 'win32' ? 'powershell' : 'bash',
+  })),
 })
 
 export type ShipitConfig = z.infer<typeof ShipitConfigSchema>
 
 function loadShipitConfig(): ShipitConfig {
   const result = explorer.search()
-  if (!result || typeof result.config !== "object" || result.config === null) {
+  if (!result || typeof result.config !== 'object' || result.config === null) {
     throw new Error(
-      `Shipit configuration file not found or invalid. Expected one of [${searchPlaces.join(", ")}].`,
+      `Shipit configuration file not found or invalid. Expected one of [${searchPlaces.join(', ')}].`,
     )
   }
   return ShipitConfigSchema.parse(result.config)

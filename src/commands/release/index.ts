@@ -1,5 +1,5 @@
-import { program } from '@/cli'
 import { Option } from 'commander'
+import { program } from '@/cli'
 
 const release = program
   .command('release')
@@ -9,7 +9,9 @@ const release = program
 release
   .command('list')
   .description('列出近n个产物')
-  .addOption(new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']))
+  .addOption(
+    new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']),
+  )
   .addOption(new Option('-n, --limit <limit>').default(10))
   .option('-i, --interactive')
   .action((options) => {
@@ -19,7 +21,9 @@ release
 release
   .command('publish [name]')
   .description('发布指定名称的产物')
-  .addOption(new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']))
+  .addOption(
+    new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']),
+  )
   .option('-d, --dir <dir>')
   .option('--no-hooks')
   .option('-i, --interactive')
