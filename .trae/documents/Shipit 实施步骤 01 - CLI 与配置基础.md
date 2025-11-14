@@ -17,6 +17,7 @@
 - 模块名：`shipit`；文件：`shipit.config.ts|js`，支持 `.local` 覆盖。
 - 结构：`artifact/upload/release/hooks`，以 `zod` 严格校验并提供默认值。
 - 参考：`src/config/shipit.ts`（`ShipitConfigSchema` 与加载逻辑）。
+ - 校验时机：采用按需校验（懒加载），在具体命令执行时访问对应配置段才解析与报错，避免 CLI 初始化阶段即失败。
 
 ## 命名规范
 - 默认模板：`release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip`；命令行 `-n` 可覆盖。
@@ -24,4 +25,3 @@
 ## 完成标准
 - CLI 能启动并展示子命令与选项。
 - 配置加载失败时给出人类可读错误信息并退出非零码。
-
