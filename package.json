@@ -2,7 +2,9 @@
   "name": "@mudssky/shipit",
   "version": "1.0.0",
   "description": "",
-  "bin": {},
+  "bin": {
+    "shipit": "dist/index.js"
+  },
   "private": true,
   "scripts": {
     "prepare": "husky",
