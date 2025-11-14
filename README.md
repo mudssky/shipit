@@ -30,6 +30,11 @@
 - 全局配置（可选）：`TABLE_STYLE?: 'tsv' | 'table'`（从 `@/config` 读取）
 - 读取路径优先级：`SHIPIT_CONFIG_DIR` 环境变量 > 项目根目录（如 `c:\home\Projects\frontend\node\shipit`）> 当前工作目录
 
+### 示例配置
+- 示例文件：`shipit.config.example.ts`（随 npm 包一同提供）
+- 使用方式：复制为 `shipit.config.ts` 后按需修改占位字段（AK/SK、Bucket、Server Token 等）
+- 安全建议：敏感信息优先使用环境变量或外部注入，避免提交到版本库
+
 ## 命令
 - 上传：`shipit upload <file> [-p server|oss|scp] [-n name] [--no-hooks] [--dry-run]`
 - 列表：`shipit release list [-p server|oss] [-n limit] [--style tsv|table] [-i|--no-interactive] [--yes]`
@@ -65,3 +70,20 @@
 ## 测试
 - 运行：`pnpm test`
 - 覆盖率：`@vitest/coverage-v8`（文本与 HTML）
+
+## 发布到 npm
+- 前置：确保 `package.json` 已设置
+  - `private: false`
+  - `bin.shipit: dist/index.js`
+  - `publishConfig.access: public`（作用于作用域包 `@mudssky/…`）
+- 构建产物：`pnpm build`
+- 登录 npm：`npm login`（或 `pnpm npm login`）
+- 发布：
+  - 常规：`npm publish`
+  - 指定公开访问（若未配置 `publishConfig`）：`npm publish --access public`
+- 版本管理：
+  - 升级版本号：`npm version patch|minor|major`
+  - 预发布标签：`npm publish --tag beta`
+- 验证：
+  - 全局安装：`npm i -g @mudssky/shipit`
+  - 运行：`shipit --help`
