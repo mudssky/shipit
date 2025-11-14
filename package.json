@@ -5,6 +5,7 @@
   "bin": {},
   "private": true,
   "scripts": {
+    "prepare": "husky",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "build": "rspack build",
@@ -28,6 +29,8 @@
     "@types/node": "^24.10.1",
     "@typescript/native-preview": "7.0.0-dev.20251113.1",
     "@vitest/coverage-v8": "^4.0.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "vitest": "^4.0.8"
