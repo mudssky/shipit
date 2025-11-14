@@ -134,7 +134,10 @@ export default {
 
 * 上传到 OSS：
 
-  * 推荐优先实现 Aliyun OSS 或通用 S3 接口；支持前缀目录（`prefix`）与公共读策略；返回对象 Key 与可访问 URL。
+  * 默认实现：Aliyun OSS，采用官方 Node SDK `ali-oss`，支持 `multipartUpload`、STS 临时凭证与内网加速；返回对象 Key 与可访问 URL。
+  * 兼容实现：使用 AWS S3 SDK（`@aws-sdk/client-s3`）访问 OSS 的 S3 兼容端点（`https://s3.oss-{region}.aliyuncs.com`），完成常见对象 CRUD 与上传。
+  * 轻量直传：服务端生成预签名（PUT URL 或 PostPolicy），CLI 以 `axios` 执行直传，避免在 CLI 中持有永久 AK/SK。
+  * 扩展约定：抽象 `OssProvider`/`Uploader` 接口（`put/list/get` 等），按 `upload.oss.provider` 动态选择具体实现，保留后续接入 `qiniu/cos/minio` 能力。
 
 * 断点续传/大文件：第一版可不做；需在规范中预留参数位。
 
@@ -250,6 +253,8 @@ export default defineConfig({
 * 配置分域：`src/config/index.ts` 的 `GlobalEnvConfig` 包含 `playwright/dingmail`，已将发布脚手架配置拆分为独立模块并使用 Zod 校验与 Cosmiconfig 加载，分别导出，减少跨模块强依赖。
 
 * 依赖管理：新增 `axios`（HTTP 上传），后续如实现 OSS SDK 需按 Provider 增加依赖。
+  * 多 OSS 支持：默认引入 `ali-oss`；如采用 S3 兼容方式则引入 `@aws-sdk/client-s3`；采用预签名直传无需新增 SDK，复用现有 `axios`。
+  * 安全建议：优先使用 RAM/STS 临时凭证；严禁在日志或配置中输出/保存永久密钥。
 
 * 统一日志：抽象 `Logger` 包装 `ora` 与 `console`，在 `-v` 模式输出详细上下文，其余用进度态与简洁提示。
 
