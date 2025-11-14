@@ -166,3 +166,43 @@ export function getShipitConfigFilepath(): string | undefined {
   }
   return lastConfigFilepath
 }
+
+export function validateShipitConfigDetailed(): {
+  ok: boolean
+  filepath?: string
+  issues?: Array<{ path: string; message: string }>
+} {
+  const projectRoot = path.resolve(__dirname, '..', '..')
+  const startPaths = [
+    process.env.SHIPIT_CONFIG_DIR || process.cwd(),
+    projectRoot,
+    __dirname,
+  ]
+  const result = searchMultiplePaths(startPaths)
+  if (!result || typeof result.config !== 'object' || result.config === null) {
+    return {
+      ok: false,
+      filepath: result?.filepath,
+      issues: [
+        {
+          path: 'config',
+          message: `Shipit configuration file not found or invalid. Expected one of [${searchPlaces.join(
+            ', ',
+          )}].`,
+        },
+      ],
+    }
+  }
+  const parsed = ShipitConfigSchema.safeParse(result.config)
+  if (parsed.success) {
+    return { ok: true, filepath: result.filepath }
+  }
+  return {
+    ok: false,
+    filepath: result.filepath,
+    issues: parsed.error.issues.map((issue) => ({
+      path: issue.path.join('.') || 'config',
+      message: issue.message,
+    })),
+  }
+}

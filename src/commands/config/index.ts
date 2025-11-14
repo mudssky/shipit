@@ -1,6 +1,11 @@
 import path from 'path'
 import { program } from '@/cli'
-import { getShipitConfig, getShipitConfigFilepath } from '@/config/shipit'
+import {
+  getShipitConfig,
+  getShipitConfigFilepath,
+  validateShipitConfigDetailed,
+} from '@/config/shipit'
+import fs from 'fs'
 
 const cmd = program.command('config').description('配置相关工具')
 
@@ -48,4 +53,39 @@ cmd
     }
     redact(redacted)
     console.log(JSON.stringify(redacted, null, 2))
+  })
+
+cmd
+  .command('validate')
+  .description('校验当前配置文件是否符合规范')
+  .action(() => {
+    const result = validateShipitConfigDetailed()
+    if (result.ok) {
+      console.log(
+        `配置校验通过: ${result.filepath ?? '未知路径（使用内存配置）'}`,
+      )
+      return
+    }
+    console.error('配置校验失败:')
+    if (result.filepath) console.error(`文件: ${result.filepath}`)
+    for (const issue of result.issues ?? []) {
+      console.error(`  - Path: ${issue.path}, Issue: ${issue.message}`)
+    }
+    process.exitCode = 1
+  })
+
+cmd
+  .command('generate')
+  .description('输出示例配置内容到标准输出')
+  .action(() => {
+    const projectRoot = path.resolve(__dirname, '..', '..', '..')
+    const examplePath = path.join(projectRoot, 'shipit.config.example.ts')
+    try {
+      const content = fs.readFileSync(examplePath, 'utf-8')
+      console.log(content)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error(`读取示例配置失败: ${msg}`)
+      process.exitCode = 1
+    }
   })
