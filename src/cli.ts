@@ -6,7 +6,7 @@ program
   .name('shipit')
   .description('一个使用commander.js的CLI示例')
   .version('0.0.2')
-// .option('-v, --verbose', '输出详细日志信息')
+  .option('-v, --verbose', '输出详细日志信息')
 
 program
   .command('greet <name>')
