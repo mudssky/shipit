@@ -476,16 +476,53 @@ async function readGlobalTableStyle(): Promise<'tsv' | 'table' | undefined> {
 }
 
 async function unzipFile(zipPath: string, destDir: string): Promise<void> {
-  if (process.platform === 'win32') {
-    const cmd = `Expand-Archive -Path "${zipPath}" -DestinationPath "${destDir}" -Force`
-    await execa('powershell.exe', [
-      '-NoProfile',
-      '-ExecutionPolicy',
-      'Bypass',
-      '-Command',
-      cmd,
-    ])
-    return
+  if (!fs.existsSync(zipPath)) {
+    throw new ShipitError('解压失败: 文件不存在', { zipPath })
   }
-  await execa('/bin/bash', ['-lc', `unzip -o "${zipPath}" -d "${destDir}"`])
+  if (process.platform === 'win32') {
+    try {
+      await execa('powershell.exe', [
+        '-NoProfile',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-Command',
+        'Get-Command Expand-Archive -ErrorAction SilentlyContinue | Out-Null',
+      ])
+      const cmd = `Expand-Archive -Path "${zipPath}" -DestinationPath "${destDir}" -Force`
+      await execa('powershell.exe', [
+        '-NoProfile',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-Command',
+        cmd,
+      ])
+      return
+    } catch (e: any) {
+      try {
+        await execa('tar', ['-xf', zipPath, '-C', destDir])
+        return
+      } catch (e2: any) {
+        throw new ShipitError('解压失败: 平台命令不可用或执行失败', {
+          tool: 'Expand-Archive/tar',
+          error: String(e2?.shortMessage || e2?.message || e2),
+        })
+      }
+    }
+  }
+  try {
+    await execa('/bin/bash', ['-lc', `command -v unzip >/dev/null 2>&1`])
+    await execa('/bin/bash', ['-lc', `unzip -o "${zipPath}" -d "${destDir}"`])
+    return
+  } catch (e: any) {
+    try {
+      await execa('/bin/bash', ['-lc', `command -v 7z >/dev/null 2>&1`])
+      await execa('/bin/bash', ['-lc', `7z x -y -o"${destDir}" "${zipPath}"`])
+      return
+    } catch (e2: any) {
+      throw new ShipitError('解压失败: 缺少 unzip/7z 或执行失败', {
+        tool: 'unzip/7z',
+        error: String(e2?.shortMessage || e2?.message || e2),
+      })
+    }
+  }
 }
