@@ -1,24 +1,10 @@
 import { program } from '@/cli'
 import { Option } from 'commander'
 
-const shipit = program
-  .command('shipit')
-  .description('发布脚手架命令组')
-  .option('-v, --verbose', '输出详细日志信息')
-
-shipit
-  .command('upload <file>')
-  .description('上传指定zip产物')
-  .addOption(new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']))
-  .option('-n, --name <name>')
-  .option('-i, --interactive')
-  .action((file, options) => {
-    console.log('upload', { file, options })
-  })
-
-const release = shipit
+const release = program
   .command('release')
   .description('发布相关操作')
+  .option('-v, --verbose', '输出详细日志信息')
 
 release
   .command('list')
