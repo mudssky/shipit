@@ -278,12 +278,19 @@ export default defineConfig({
 * 统一日志：已新增 `Logger` 模块并在命令接入，`-v/--verbose` 在顶层 CLI 统一支持（`src/utils/logger.ts`、`src/cli.ts`）。
 * 错误与退出码：已新增统一异常类型与退出码处理，失败时输出上下文并设置非零退出码（`src/utils/errors.ts`）。
 * 上传（server）：已实现服务端上传，读取 `shipit` 配置 `upload.server.endpoint/headers/targetDir`，支持 `${ENV}` 头部占位替换，成功后输出最终文件名（`src/commands/upload/index.ts`）。
+* 发布列表与发布（server）：已实现 `createServerProvider` 的 `list/publish`，支持 `Authorization` 头；命令 `release list/publish` 已集成（`src/providers/server/index.ts`、`src/commands/release/index.ts`）。
+* Provider 下载（OSS）：已实现 Aliyun OSS `download` 并接入 `release download` 与列表交互动作；包含目标目录前缀校验（`src/providers/oss/*`、`src/commands/release/index.ts`）。
+* 钩子执行器：已实现执行器，支持 `shell/js/ts`，注入 `SHIPIT_*` 环境变量，支持 `--dry-run` 与超时（`src/utils/hooks.ts`）。
+* 命名策略：已实现基于模板的默认命名（保留扩展名），命令 `-n` 可覆盖（`src/utils/naming.ts`）。
+* 交互式体验（步骤14）：新增 `src/utils/interactive.ts` 并在 `release list/publish` 集成交互；`--no-interactive`、`--yes`；`release.listLargeThreshold` 默认 30 可配置；Hooks 概览按类型与数量，`--verbose` 显示详细脚本。
+* 全局输出样式（步骤15）：新增 `GlobalEnvConfig.TABLE_STYLE`，建立优先级链 `--style > release.listOutputStyle > global.TABLE_STYLE > 'tsv'`，`release.listOutputStyle` 改为可选（`src/config/index.ts`、`src/config/shipit.ts`、`src/commands/release/index.ts`）。
 
 使用示例：
 
 * 构建：`pnpm build`
 * 上传：`node dist/index.js upload ./dist/release.zip -p server -n release-YYYYMMDDHHmmss.zip`
-* 详日志：在命令或顶层添加 `-v`/`--verbose`
+* 列表（全局样式）：`node dist/index.js release list -p oss`（当存在 `TABLE_STYLE='table'` 时以表格渲染）
+* 交互发布：`node dist/index.js release publish -p server -i --yes --no-hooks`
 
 ***
 
