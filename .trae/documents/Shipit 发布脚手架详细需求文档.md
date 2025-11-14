@@ -28,33 +28,24 @@
 
 ## 命令设计
 
-* 顶层命令组：`shipit`
+- CLI 名称：`shipit`（不是子命令）
+- 顶层命令：`upload`、`release`
 
-  * `shipit upload <file>`：上传指定 zip 产物
+  - `shipit upload <file>`：上传指定 zip 产物
+    - 选项：`-p, --provider <provider>`（`server|oss|scp`，默认配置决定）
+    - 选项：`-n, --name <name>`（重命名产物，默认 `release-YYYYMMDDHHmmss.zip`）
+    - 选项：`-i, --interactive`（交互选择 Provider、目标路径等）
 
-    * 选项：`-p, --provider <provider>`（`server|oss|scp`，默认配置决定）
+  - `shipit release list`：列出近 `n` 个产物
+    - 选项：`-p, --provider <provider>`（当使用 OSS 列表更有意义）
+    - 选项：`-n, --limit <limit>`（默认 10）
+    - 选项：`-i, --interactive`
 
-    * 选项：`-n, --name <name>`（重命名产物，默认 `release-YYYYMMDDHHmmss.zip`）
-
-    * 选项：`-i, --interactive`（交互选择 Provider、目标路径等）
-
-  * `shipit release list`：列出近 `n` 个产物
-
-    * 选项：`-p, --provider <provider>`（当使用 OSS 列表更有意义）
-
-    * 选项：`-n, --limit <limit>`（默认 10）
-
-    * 选项：`-i, --interactive`
-
-  * `shipit release publish [name]`：发布指定名称的产物（省略则交互选择）
-
-    * 选项：`-p, --provider <provider>`
-
-    * 选项：`-d, --dir <dir>`（发布目录，默认当前目录）
-
-    * 选项：`--no-hooks`（跳过钩子）
-
-    * 选项：`-i, --interactive`
+  - `shipit release publish [name]`：发布指定名称的产物（省略则交互选择）
+    - 选项：`-p, --provider <provider>`
+    - 选项：`-d, --dir <dir>`（发布目录，默认当前目录）
+    - 选项：`--no-hooks`（跳过钩子）
+    - 选项：`-i, --interactive`
 
 ## 交互与参数规范
 
@@ -209,6 +200,39 @@ export default {
 
 * 手工验收脚本矩阵：Windows PowerShell、Linux Bash；存在/不存在钩子；`--no-hooks` 跳过；`-i` 交互选择；同名文件冲突处理。
 
+### Vitest 安装与配置说明
+
+- 安装：`pnpm add -D vitest @vitest/coverage-v8`
+- 脚本：新增 `"test": "vitest run"`、`"test:watch": "vitest"`，将 `pnpm qa` 扩展为 `pnpm typecheck && pnpm biome:fixAll && pnpm test`
+- 配置：在项目根新增 `vitest.config.ts`，最小配置如下（Node 环境与覆盖率阈值）：
+
+```
+import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      thresholds: { lines: 80, functions: 80, branches: 70, statements: 80 },
+    },
+  },
+})
+```
+
+- 运行：
+  - 单次执行：`pnpm test`
+  - 监视模式：`pnpm test:watch`
+  - 质量序列：`pnpm qa`
+
+### 集成测试实践（CLI）
+
+- 直接运行模式：在测试中导入 `program`（`src/cli.ts:3`），通过 `program.parse(["node", "cli", "shipit", "upload", "./dist/release.zip"])` 注入参数并断言输出与退出码。
+- 构建运行模式：`pnpm build` 后以 `node dist/index.js shipit release list -n 5` 执行命令，断言标准输出与退出码。
+- 隔离：使用临时目录与文件，测试结束清理；对外部依赖使用 `vi.mock()`。
+
 ## 交付物
 
 * `shipit` 命令组及子命令实现。
@@ -221,9 +245,9 @@ export default {
 
 ## 架构改进建议（结合现有代码）
 
-* 命令名称与配置模块统一：当前 CLI 名称为 `shipit`（`src/cli.ts:5-18`），建议将发布功能独立为 `shipit` 命令组或独立 bin，配置模块名改为 `shipit`，避免与 `dingmail/gitlab` 混杂。
+* 命令名称与配置模块统一：CLI 名称为 `shipit`（`src/cli.ts:5-18`），顶层命令为 `upload`（`src/commands/upload/index.ts:1-18`）与 `release`（`src/commands/release/index.ts:1-28`）；配置模块独立为 `shipit`（`src/config/shipit.ts:1-79`），与 `dingmail/gitlab` 解耦。
 
-* 配置分域：`src/config/index.ts` 的 `GlobalEnvConfig` 包含 `playwright/dingmail`，建议拆分为多模块配置加载器，分别校验并导出，以减少跨模块的强依赖。
+* 配置分域：`src/config/index.ts` 的 `GlobalEnvConfig` 包含 `playwright/dingmail`，已将发布脚手架配置拆分为独立模块并使用 Zod 校验与 Cosmiconfig 加载，分别导出，减少跨模块强依赖。
 
 * 依赖管理：新增 `axios`（HTTP 上传），后续如实现 OSS SDK 需按 Provider 增加依赖。
 
