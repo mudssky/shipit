@@ -51,6 +51,7 @@ const ReleaseSchema = z.object({
   defaultProvider: z.enum(['server', 'oss', 'scp']).default('oss'),
   targetDir: z.string().default('.'),
   listLimit: z.number().default(10),
+  allowedTargetDirPrefix: z.string().optional(),
 })
 
 const HooksSchema = z.object({
