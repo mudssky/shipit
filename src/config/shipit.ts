@@ -52,6 +52,7 @@ const ReleaseSchema = z.object({
   targetDir: z.string().default('.'),
   listLimit: z.number().default(10),
   allowedTargetDirPrefix: z.string().optional(),
+  listOutputStyle: z.enum(['tsv', 'table']).default('tsv'),
 })
 
 const HooksSchema = z.object({
@@ -74,6 +75,7 @@ const ShipitConfigSchema = z.object({
     defaultProvider: 'oss' as const,
     targetDir: '.',
     listLimit: 10,
+    listOutputStyle: 'tsv' as const,
   })),
   hooks: HooksSchema.default(() => ({
     beforeUpload: [],

@@ -4,23 +4,19 @@ vi.mock('@/providers/oss', () => {
   return {
     createOssProvider: vi.fn(() => ({
       list: vi.fn(async () => [
-        {
-          key: 'releases/a.zip',
-          lastModified: new Date('2025-01-01T00:00:00Z'),
-        },
-        { key: 'releases/b.zip', lastModified: '2025-01-02T00:00:00Z' },
+        { key: 'releases/a.zip', lastModified: '2025-01-01T00:00:00Z' },
       ]),
       put: vi.fn(),
     })),
   }
 })
 
-describe('release list 使用 console.table 展示', () => {
+describe('release list --style 选项覆盖输出模式', () => {
   beforeEach(() => {
     vi.resetModules()
   })
 
-  it('调用 console.table 输出 Key 与 LastModified', async () => {
+  it('传入 --style table 时使用 console.table', async () => {
     const { program } = await import('@/cli')
     vi.doMock('@/config/shipit', () => ({
       shipitConfig: {
@@ -36,7 +32,7 @@ describe('release list 使用 console.table 展示', () => {
           defaultProvider: 'oss',
           targetDir: '.',
           listLimit: 10,
-          listOutputStyle: 'table',
+          listOutputStyle: 'tsv',
         },
         hooks: {
           beforeUpload: [],
@@ -56,6 +52,8 @@ describe('release list 使用 console.table 展示', () => {
       'list',
       '-p',
       'oss',
+      '--style',
+      'table',
     ])
     expect(spyTable).toHaveBeenCalled()
     spyTable.mockRestore()

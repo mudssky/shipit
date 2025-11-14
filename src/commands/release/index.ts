@@ -18,6 +18,7 @@ release
     new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']),
   )
   .addOption(new Option('-n, --limit <limit>').default(10))
+  .addOption(new Option('--style <style>').choices(['tsv', 'table']))
   .option('-i, --interactive')
   .action(async (options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
@@ -35,8 +36,11 @@ release
           Key: it.key,
           LastModified: String(it.lastModified ?? ''),
         }))
+        logger.setTableStyle(
+          options.style || shipitConfig.release.listOutputStyle,
+        )
         logger.succeed('获取列表成功')
-        console.table(rows)
+        logger.renderTable(rows)
         return
       }
       logger.log('info', '尚未实现的列表 Provider')
