@@ -58,7 +58,7 @@
 
 ## 交互与参数规范
 
-* 保持与现有交互风格一致（参考 `src/commands/gitlab/merge/action.ts:52-101` 的 `inquirer` 模式）。
+* `inquirer` 模式。
 
 * 命令级 `-v, --verbose` 统一支持（参考 `src/commands/dingmail/index.ts:7-11`）。
 
@@ -66,9 +66,9 @@
 
 ## 配置规范（cosmiconfig + zod）
 
-* 模块名建议：`shipit`（与现有 `ai-cli` 解耦，参考现有加载方式 `src/config/index.ts:36-73`）。
+* 模块名建议：`shipit`（与现有 `shipit` 解耦，参考现有加载方式 `src/config/index.ts:36-73`）。
 
-* 配置文件：`shipit.config.ts|js`（支持 local 覆盖），也可兼容 `ai-cli.config.*` 下的 `shipit` 节点。
+* 配置文件：`shipit.config.ts|js`（支持 local 覆盖），也可兼容 `shipit.config.*` 下的 `shipit` 节点。
 
 * 配置结构示例：
 
@@ -221,7 +221,7 @@ export default {
 
 ## 架构改进建议（结合现有代码）
 
-* 命令名称与配置模块统一：当前 CLI 名称为 `ai-cli`（`src/cli.ts:5-18`），建议将发布功能独立为 `shipit` 命令组或独立 bin，配置模块名改为 `shipit`，避免与 `dingmail/gitlab` 混杂。
+* 命令名称与配置模块统一：当前 CLI 名称为 `shipit`（`src/cli.ts:5-18`），建议将发布功能独立为 `shipit` 命令组或独立 bin，配置模块名改为 `shipit`，避免与 `dingmail/gitlab` 混杂。
 
 * 配置分域：`src/config/index.ts` 的 `GlobalEnvConfig` 包含 `playwright/dingmail`，建议拆分为多模块配置加载器，分别校验并导出，以减少跨模块的强依赖。
 
