@@ -54,9 +54,12 @@ release
           const fm = lm ? dayjs(lm).format('YYYY-MM-DD HH:mm:ss') : ''
           return { Key: it.key, LastModified: fm }
         })
-        logger.setTableStyle(
-          options.style || shipitConfig.release.listOutputStyle,
-        )
+        const finalStyle =
+          options.style ??
+          shipitConfig.release.listOutputStyle ??
+          (await readGlobalTableStyle()) ??
+          'tsv'
+        logger.setTableStyle(finalStyle)
         logger.succeed('获取列表成功')
         logger.renderTable(rows)
         if (interactiveEnabled) {
@@ -142,9 +145,12 @@ release
           const fm = lm ? dayjs(lm).format('YYYY-MM-DD HH:mm:ss') : ''
           return { Key: it.key, LastModified: fm }
         })
-        logger.setTableStyle(
-          options.style || shipitConfig.release.listOutputStyle,
-        )
+        const finalStyle =
+          options.style ??
+          shipitConfig.release.listOutputStyle ??
+          (await readGlobalTableStyle()) ??
+          'tsv'
+        logger.setTableStyle(finalStyle)
         logger.succeed('获取列表成功')
         logger.renderTable(rows)
         if (interactiveEnabled) {
@@ -410,4 +416,14 @@ release
 
 function normalizePath(p: string): string {
   return path.resolve(p).replace(/\\/g, '/').toLowerCase()
+}
+
+async function readGlobalTableStyle(): Promise<'tsv' | 'table' | undefined> {
+  try {
+    const mod: any = await import('@/config')
+    const val = mod?.globalConfig?.TABLE_STYLE
+    return val === 'table' || val === 'tsv' ? val : undefined
+  } catch {
+    return undefined
+  }
 }

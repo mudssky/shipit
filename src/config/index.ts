@@ -10,6 +10,7 @@ const GlobalEnvConfigSchema = z.object({
   DING_IMAP_USER: z.string(),
   DING_IMAP_PASS: z.string(),
   SHOW_MAIL_NUMBER: z.number(),
+  TABLE_STYLE: z.enum(['tsv', 'table']).optional(),
   gitlabProjects: z
     .array(
       z.object({
