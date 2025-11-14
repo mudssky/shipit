@@ -53,6 +53,7 @@ const ReleaseSchema = z.object({
   listLimit: z.number().default(10),
   allowedTargetDirPrefix: z.string().optional(),
   listOutputStyle: z.enum(['tsv', 'table']).default('tsv'),
+  listLargeThreshold: z.number().default(30),
 })
 
 const ServerProviderSchema = z.object({
@@ -92,6 +93,7 @@ const ShipitConfigSchema = z.object({
     targetDir: '.',
     listLimit: 10,
     listOutputStyle: 'tsv' as const,
+    listLargeThreshold: 30,
   })),
   server: ServerProviderSchema.optional(),
   hooks: HooksSchema.default(() => ({

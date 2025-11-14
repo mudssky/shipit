@@ -1,6 +1,7 @@
 import { Option } from 'commander'
 import dayjs from 'dayjs'
 import fs from 'fs'
+import inquirer from 'inquirer'
 import path from 'path'
 import { program } from '@/cli'
 import { shipitConfig } from '@/config/shipit'
@@ -8,6 +9,13 @@ import { runHooks } from '@/hooks/executor'
 import { createOssProvider } from '@/providers/oss'
 import { createServerProvider } from '@/providers/server'
 import { exitWithError, ShipitError } from '@/utils/errors'
+import {
+  confirm,
+  inputDir,
+  inputText,
+  pickAction,
+  pickFromList,
+} from '@/utils/interactive'
 import { Logger } from '@/utils/logger'
 
 const release = program
@@ -24,12 +32,17 @@ release
   .addOption(new Option('-n, --limit <limit>').default(10))
   .addOption(new Option('--style <style>').choices(['tsv', 'table']))
   .option('-i, --interactive')
+  .option('--no-interactive')
+  .option('--yes')
   .action(async (options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)
     try {
       const provider = options.provider || shipitConfig.release.defaultProvider
       const limit = Number(options.limit || shipitConfig.release.listLimit)
+      const autoInteractive = Boolean(process.stdout.isTTY && !process.env.CI)
+      const interactiveEnabled =
+        options.interactive ?? (autoInteractive && !options.noInteractive)
       if (provider === 'oss') {
         const cfg = shipitConfig.upload.oss
         if (!cfg) throw new ShipitError('缺少 oss 配置')
@@ -46,6 +59,76 @@ release
         )
         logger.succeed('获取列表成功')
         logger.renderTable(rows)
+        if (interactiveEnabled) {
+          const threshold = shipitConfig.release.listLargeThreshold
+          let pool = items
+          if (Array.isArray(pool) && pool.length > threshold) {
+            const kw = await inputText('请输入过滤关键词(可空)', '')
+            if (kw) pool = items.filter((it) => String(it.key).includes(kw))
+          }
+          const picked = await pickFromList(pool, (it) => ({
+            name: `${it.key} | ${
+              it.lastModified
+                ? dayjs(String(it.lastModified)).format('YYYY-MM-DD HH:mm:ss')
+                : ''
+            }`,
+            value: it,
+          }))
+          if (!picked) return
+          const actions = [
+            { name: '下载', value: 'download' },
+            { name: '发布', value: 'publish' },
+            { name: '取消', value: 'cancel' },
+          ]
+          const act = await pickAction(actions)
+          if (!act || act === 'cancel') {
+            logger.succeed('操作已取消')
+            return
+          }
+          if (act === 'download') {
+            const outputDir = String(
+              options.output || shipitConfig.release.targetDir || '.',
+            )
+            const allowed = shipitConfig.release.allowedTargetDirPrefix
+            if (
+              allowed &&
+              !normalizePath(outputDir).startsWith(normalizePath(allowed))
+            ) {
+              throw new ShipitError(
+                `下载目录不合法: 需以 ${allowed} 开头，当前为 ${outputDir}`,
+              )
+            }
+            fs.mkdirSync(outputDir, { recursive: true })
+            const key = cfg.prefix
+              ? `${cfg.prefix}${String(picked.key)}`
+              : String(picked.key)
+            const filePath = path.join(
+              outputDir,
+              path.basename(String(picked.key)),
+            )
+            logger.start(`正在下载 ${key}`)
+            const res = await oss.download(key, filePath)
+            if (!res?.bytes || res.bytes <= 0) {
+              throw new ShipitError('下载失败或内容为空')
+            }
+            const etagInfo = res.etag ? `, etag=${res.etag}` : ''
+            logger.succeed(
+              `下载成功: ${filePath} (${res.bytes} bytes${etagInfo})`,
+            )
+            return
+          }
+          if (act === 'publish') {
+            if (options.dryRun) {
+              logger.succeed(
+                `dry-run: 发布 ${path.basename(String(picked.key))}`,
+              )
+              return
+            }
+            logger.start('正在发布')
+            logger.succeed(`发布准备完成: ${path.basename(String(picked.key))}`)
+            return
+          }
+        }
         return
       }
       if (provider === 'server') {
@@ -64,6 +147,60 @@ release
         )
         logger.succeed('获取列表成功')
         logger.renderTable(rows)
+        if (interactiveEnabled) {
+          const threshold = shipitConfig.release.listLargeThreshold
+          let pool = items
+          if (Array.isArray(pool) && pool.length > threshold) {
+            const kw = await inputText('请输入过滤关键词(可空)', '')
+            if (kw) pool = items.filter((it) => String(it.key).includes(kw))
+          }
+          const picked = await pickFromList(pool, (it) => ({
+            name: `${it.key} | ${
+              it.lastModified
+                ? dayjs(String(it.lastModified)).format('YYYY-MM-DD HH:mm:ss')
+                : ''
+            }`,
+            value: it,
+          }))
+          if (!picked) return
+          const actions = [
+            { name: '发布', value: 'publish' },
+            { name: '取消', value: 'cancel' },
+          ]
+          const act = await pickAction(actions)
+          if (!act || act === 'cancel') {
+            logger.succeed('操作已取消')
+            return
+          }
+          if (act === 'publish') {
+            const targetDir = String(
+              options.dir || shipitConfig.release.targetDir,
+            )
+            const allowed = shipitConfig.release.allowedTargetDirPrefix
+            if (
+              allowed &&
+              !normalizePath(targetDir).startsWith(normalizePath(allowed))
+            ) {
+              throw new ShipitError(
+                `发布目录不合法: 需以 ${allowed} 开头，当前为 ${targetDir}`,
+              )
+            }
+            if (options.dryRun) {
+              logger.succeed(
+                `dry-run: 发布 ${path.basename(
+                  String(picked.key),
+                )} → ${targetDir}`,
+              )
+              return
+            }
+            const svc = createServerProvider(cfg)
+            await svc.publish(path.basename(String(picked.key)), targetDir)
+            logger.succeed(
+              `发布成功: ${path.basename(String(picked.key))} → ${targetDir}`,
+            )
+            return
+          }
+        }
         return
       }
       logger.log('info', '尚未实现的列表 Provider')
@@ -84,6 +221,8 @@ release
   .option('--no-hooks')
   .option('--dry-run')
   .option('-i, --interactive')
+  .option('--no-interactive')
+  .option('--yes')
   .action(async (name, options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)
@@ -91,6 +230,79 @@ release
       const provider = options.provider || shipitConfig.release.defaultProvider
       const targetDir = String(options.dir || shipitConfig.release.targetDir)
       const allowed = shipitConfig.release.allowedTargetDirPrefix
+      const autoInteractive = Boolean(process.stdout.isTTY && !process.env.CI)
+      const interactiveEnabled =
+        options.interactive ?? (autoInteractive && !options.noInteractive)
+      if (interactiveEnabled) {
+        const defaultName = String(name || '')
+        const pickedName =
+          defaultName ||
+          (await (async () => {
+            const ans = await inquirer.prompt([
+              {
+                type: 'input',
+                name: 'nm',
+                message: '请输入发布名称',
+                default: defaultName,
+              },
+            ])
+            return String(ans.nm || '')
+          })())
+        const dirInput = await inputDir(targetDir, (v) => {
+          const ok =
+            !allowed || normalizePath(v).startsWith(normalizePath(allowed))
+          return ok ? true : `发布目录不合法: 需以 ${allowed} 开头，当前为 ${v}`
+        })
+        const hooks = shipitConfig.hooks as any
+        const stages = ['beforeRelease', 'afterRelease'] as const
+        const summary = stages.map((st) => {
+          const arr = (hooks as any)[st] as any[]
+          const cntShell = arr.filter((x) =>
+            typeof x === 'string'
+              ? !(x.endsWith('.ts') || x.endsWith('.js'))
+              : (x.type ?? '') === 'shell',
+          ).length
+          const cntJs = arr.filter((x) =>
+            typeof x === 'string' ? x.endsWith('.js') : (x.type ?? '') === 'js',
+          ).length
+          const cntTs = arr.filter((x) =>
+            typeof x === 'string' ? x.endsWith('.ts') : (x.type ?? '') === 'ts',
+          ).length
+          return {
+            stage: st,
+            shell: cntShell,
+            js: cntJs,
+            ts: cntTs,
+            total: arr.length,
+          }
+        })
+        logger.log(
+          'info',
+          `发布摘要: 名称=${pickedName}, 目录=${dirInput}, provider=${provider}`,
+        )
+        for (const s of summary) {
+          logger.log(
+            'info',
+            `${s.stage}: 合计${s.total}项 (shell=${s.shell}, js=${s.js}, ts=${s.ts})`,
+          )
+          if (verbose) {
+            const arr = (hooks as any)[s.stage] as any[]
+            const names = arr.map((x) =>
+              typeof x === 'string' ? x : String(x.value),
+            )
+            logger.log('info', `详细: ${names.join(', ')}`)
+          }
+        }
+        const ok = options.yes
+          ? true
+          : await confirm('确认执行发布操作？', true)
+        if (!ok) {
+          logger.succeed('操作已取消')
+          return
+        }
+        name = pickedName
+        ;(options as any).dir = dirInput
+      }
       if (
         allowed &&
         !normalizePath(targetDir).startsWith(normalizePath(allowed))
