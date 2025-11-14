@@ -10,6 +10,7 @@ export class AliyunOssProvider implements OssProvider {
     endpoint?: string
     accessKeyId?: string
     accessKeySecret?: string
+    securityToken?: string
   }) {
     this.client = new OSS({
       bucket: opts.bucket,
@@ -17,6 +18,7 @@ export class AliyunOssProvider implements OssProvider {
       endpoint: opts.endpoint,
       accessKeyId: opts.accessKeyId,
       accessKeySecret: opts.accessKeySecret,
+      securityToken: opts.securityToken,
       secure: true,
     })
   }
