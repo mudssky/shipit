@@ -19,6 +19,15 @@
 - 支持 `--no-hooks` 跳过钩子。
 - 解压实现：通过 `execa` 调用平台命令，Windows 使用 PowerShell `Expand-Archive`，Linux 使用 `unzip`。
 
+## 故障分类与回退
+- 错误分类：
+  - `解压失败: 文件不存在`（下载后文件未生成或被删除）
+  - `解压失败: 平台命令不可用或执行失败`（Windows 下 `Expand-Archive/tar` 执行异常）
+  - `解压失败: 缺少 unzip/7z 或执行失败`（Linux/macOS 下 `unzip/7z` 缺失或执行异常）
+- 回退策略：
+  - Windows：先尝试 `Expand-Archive`，失败回退 `tar -xf`
+  - Linux/mac：先尝试 `unzip`，缺失回退 `7z`
+
 ## 失败与退出码
 - 任一步骤失败即终止并返回非零退出码。
 
