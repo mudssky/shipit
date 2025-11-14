@@ -1,19 +1,18 @@
+import dayjs from 'dayjs'
+
 export interface NameStrategy {
   generate(baseTemplate: string, ctx: Record<string, any>): string
 }
 
-function pad2(n: number): string {
-  return String(n).padStart(2, '0')
-}
-
 export function formatName(template: string, now: Date = new Date()): string {
+  const d = dayjs(now)
   const map: Record<string, string> = {
-    '{yyyy}': String(now.getFullYear()),
-    '{MM}': pad2(now.getMonth() + 1),
-    '{dd}': pad2(now.getDate()),
-    '{HH}': pad2(now.getHours()),
-    '{mm}': pad2(now.getMinutes()),
-    '{ss}': pad2(now.getSeconds()),
+    '{yyyy}': d.format('YYYY'),
+    '{MM}': d.format('MM'),
+    '{dd}': d.format('DD'),
+    '{HH}': d.format('HH'),
+    '{mm}': d.format('mm'),
+    '{ss}': d.format('ss'),
   }
   let out = template
   for (const k of Object.keys(map)) out = out.replaceAll(k, map[k])

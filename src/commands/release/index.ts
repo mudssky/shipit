@@ -1,4 +1,5 @@
 import { Option } from 'commander'
+import dayjs from 'dayjs'
 import path from 'path'
 import { program } from '@/cli'
 import { shipitConfig } from '@/config/shipit'
@@ -33,10 +34,11 @@ release
         logger.start('正在从 OSS 获取列表')
         const oss = createOssProvider(cfg)
         const items = await oss.list(cfg.prefix ?? '', limit)
-        const rows = items.map((it) => ({
-          Key: it.key,
-          LastModified: String(it.lastModified ?? ''),
-        }))
+        const rows = items.map((it) => {
+          const lm = it.lastModified ? String(it.lastModified) : ''
+          const fm = lm ? dayjs(lm).format('YYYY-MM-DD HH:mm:ss') : ''
+          return { Key: it.key, LastModified: fm }
+        })
         logger.setTableStyle(
           options.style || shipitConfig.release.listOutputStyle,
         )
