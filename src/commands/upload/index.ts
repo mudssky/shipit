@@ -1,5 +1,12 @@
+import axios from 'axios'
 import { Option } from 'commander'
+import FormData from 'form-data'
+import fs from 'fs'
+import path from 'path'
 import { program } from '@/cli'
+import { shipitConfig } from '@/config/shipit'
+import { exitWithError, ShipitError } from '@/utils/errors'
+import { Logger } from '@/utils/logger'
 
 program
   .command('upload <file>')
@@ -10,6 +17,79 @@ program
   )
   .option('-n, --name <name>')
   .option('-i, --interactive')
-  .action((file, options) => {
-    console.log('upload', { file, options })
+  .action(async (file, options) => {
+    const verbose = Boolean(options.verbose || program.opts().verbose)
+    const logger = new Logger(verbose)
+    try {
+      const provider = options.provider || shipitConfig.upload.defaultProvider
+      const filePath = file || shipitConfig.artifact.defaultPath
+      const name =
+        options.name || formatName(shipitConfig.artifact.nameTemplate)
+      if (!fs.existsSync(filePath)) {
+        throw new ShipitError(`文件不存在: ${filePath}`)
+      }
+      if (provider === 'server') {
+        await serverUpload({ filePath, name, logger })
+        return
+      }
+      throw new ShipitError(`未实现的上传 Provider: ${provider}`)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      logger.fail(`上传失败: ${msg}`)
+      exitWithError(msg)
+    }
   })
+
+function formatName(tpl: string): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const map: Record<string, string> = {
+    '{yyyy}': String(d.getFullYear()),
+    '{MM}': pad(d.getMonth() + 1),
+    '{dd}': pad(d.getDate()),
+    '{HH}': pad(d.getHours()),
+    '{mm}': pad(d.getMinutes()),
+    '{ss}': pad(d.getSeconds()),
+  }
+  let out = tpl
+  for (const k of Object.keys(map)) out = out.replaceAll(k, map[k])
+  return out
+}
+
+function resolveHeaders(
+  headers?: Record<string, string>,
+): Record<string, string> {
+  if (!headers) return {}
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(headers)) {
+    const replaced = v.replace(/\$\{([A-Z0-9_]+)\}/g, (_, key) => {
+      const val = process.env[key]
+      return val ?? ''
+    })
+    out[k] = replaced
+  }
+  return out
+}
+
+async function serverUpload(args: {
+  filePath: string
+  name: string
+  logger: Logger
+}): Promise<void> {
+  const { filePath, name, logger } = args
+  const cfg = shipitConfig.upload.server
+  if (!cfg) throw new ShipitError('缺少 server 上传配置')
+  logger.start('正在上传到服务器')
+  const form = new FormData()
+  form.append('file', fs.createReadStream(filePath), {
+    filename: name,
+    contentType: 'application/zip',
+  })
+  form.append('targetDir', cfg.targetDir)
+  const headers = { ...resolveHeaders(cfg.headers), ...form.getHeaders() }
+  const res = await axios.post(cfg.endpoint, form, { headers })
+  const data = res.data
+  const finalPath = data?.path || data?.url || data?.target || ''
+  const filename = path.basename(finalPath || name)
+  logger.succeed(`上传成功: ${filename}`)
+}
