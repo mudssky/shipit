@@ -55,6 +55,11 @@ const ReleaseSchema = z.object({
   listOutputStyle: z.enum(['tsv', 'table']).default('tsv'),
 })
 
+const ServerProviderSchema = z.object({
+  baseUrl: z.string(),
+  token: z.string().optional(),
+})
+
 const HookItemObjectSchema = z.object({
   type: z.enum(['shell', 'js', 'ts']).optional(),
   value: z.string(),
@@ -88,6 +93,7 @@ const ShipitConfigSchema = z.object({
     listLimit: 10,
     listOutputStyle: 'tsv' as const,
   })),
+  server: ServerProviderSchema.optional(),
   hooks: HooksSchema.default(() => ({
     beforeUpload: [],
     afterUpload: [],

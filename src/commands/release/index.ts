@@ -6,6 +6,7 @@ import { program } from '@/cli'
 import { shipitConfig } from '@/config/shipit'
 import { runHooks } from '@/hooks/executor'
 import { createOssProvider } from '@/providers/oss'
+import { createServerProvider } from '@/providers/server'
 import { exitWithError, ShipitError } from '@/utils/errors'
 import { Logger } from '@/utils/logger'
 
@@ -35,6 +36,24 @@ release
         logger.start('正在从 OSS 获取列表')
         const oss = createOssProvider(cfg)
         const items = await oss.list(cfg.prefix ?? '', limit)
+        const rows = items.map((it) => {
+          const lm = it.lastModified ? String(it.lastModified) : ''
+          const fm = lm ? dayjs(lm).format('YYYY-MM-DD HH:mm:ss') : ''
+          return { Key: it.key, LastModified: fm }
+        })
+        logger.setTableStyle(
+          options.style || shipitConfig.release.listOutputStyle,
+        )
+        logger.succeed('获取列表成功')
+        logger.renderTable(rows)
+        return
+      }
+      if (provider === 'server') {
+        const cfg = shipitConfig.server
+        if (!cfg) throw new ShipitError('缺少 server 配置')
+        logger.start('正在从 Server 获取列表')
+        const server = createServerProvider(cfg)
+        const items = await server.list('', limit)
         const rows = items.map((it) => {
           const lm = it.lastModified ? String(it.lastModified) : ''
           const fm = lm ? dayjs(lm).format('YYYY-MM-DD HH:mm:ss') : ''
@@ -102,7 +121,17 @@ release
         logger.succeed(`dry-run: 发布 ${path.basename(name)} → ${targetDir}`)
         return
       }
-      logger.succeed(`发布准备完成: ${path.basename(name)} → ${targetDir}`)
+      if (provider === 'server') {
+        const cfg = shipitConfig.server
+        if (!cfg) throw new ShipitError('缺少 server 配置')
+        const server = createServerProvider(cfg)
+        await server.publish(path.basename(String(name)), targetDir)
+        logger.succeed(
+          `发布成功: ${path.basename(String(name))} → ${targetDir}`,
+        )
+      } else {
+        logger.succeed(`发布准备完成: ${path.basename(name)} → ${targetDir}`)
+      }
       if (enableHooks)
         await runHooks(
           'afterRelease',
