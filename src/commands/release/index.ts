@@ -1,5 +1,7 @@
 import { Option } from 'commander'
 import { program } from '@/cli'
+import { shipitConfig } from '@/config/shipit'
+import { createOssProvider } from '@/providers/oss'
 
 const release = program
   .command('release')
@@ -14,7 +16,20 @@ release
   )
   .addOption(new Option('-n, --limit <limit>').default(10))
   .option('-i, --interactive')
-  .action((options) => {
+  .action(async (options) => {
+    const provider = options.provider || shipitConfig.release.defaultProvider
+    const limit = Number(options.limit || shipitConfig.release.listLimit)
+    if (provider === 'oss') {
+      const cfg = shipitConfig.upload.oss
+      if (!cfg) {
+        console.error('缺少 oss 配置')
+        return
+      }
+      const oss = createOssProvider(cfg)
+      const items = await oss.list(cfg.prefix ?? '', limit)
+      for (const it of items) console.log(it.key)
+      return
+    }
     console.log('release list', { options })
   })
 
