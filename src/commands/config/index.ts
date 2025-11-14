@@ -58,8 +58,24 @@ cmd
 cmd
   .command('validate')
   .description('校验当前配置文件是否符合规范')
-  .action(() => {
+  .option('--json')
+  .action((options: { json?: boolean }) => {
     const result = validateShipitConfigDetailed()
+    if (options?.json) {
+      console.log(
+        JSON.stringify(
+          {
+            ok: result.ok,
+            filepath: result.filepath,
+            issues: result.issues ?? [],
+          },
+          null,
+          2,
+        ),
+      )
+      process.exitCode = result.ok ? 0 : 1
+      return
+    }
     if (result.ok) {
       console.log(
         `配置校验通过: ${result.filepath ?? '未知路径（使用内存配置）'}`,
@@ -77,12 +93,20 @@ cmd
 cmd
   .command('generate')
   .description('输出示例配置内容到标准输出')
-  .action(() => {
+  .option('--out <file>')
+  .action((options: { out?: string }) => {
     const projectRoot = path.resolve(__dirname, '..', '..', '..')
     const examplePath = path.join(projectRoot, 'shipit.config.example.ts')
     try {
       const content = fs.readFileSync(examplePath, 'utf-8')
-      console.log(content)
+      if (options?.out) {
+        const outPath = path.resolve(process.cwd(), options.out)
+        fs.mkdirSync(path.dirname(outPath), { recursive: true })
+        fs.writeFileSync(outPath, content, 'utf-8')
+        console.log(`已写入: ${outPath}`)
+      } else {
+        console.log(content)
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       console.error(`读取示例配置失败: ${msg}`)
