@@ -8,6 +8,10 @@ export interface OssObjectInfo {
 export interface OssProvider {
   put(key: string, filePath: string): Promise<string | undefined>
   list(prefix: string, limit: number): Promise<OssObjectInfo[]>
+  download(
+    key: string,
+    targetPath: string,
+  ): Promise<{ bytes: number; etag?: string }>
 }
 
 export function createOssProvider(cfg: any): OssProvider {

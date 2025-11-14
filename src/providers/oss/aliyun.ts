@@ -34,4 +34,18 @@ export class AliyunOssProvider implements OssProvider {
       lastModified: o.lastModified,
     }))
   }
+  async download(
+    key: string,
+    targetPath: string,
+  ): Promise<{ bytes: number; etag?: string }> {
+    await this.client.get(key, targetPath)
+    const st = fs.statSync(targetPath)
+    let etag: string | undefined
+    try {
+      const head = await this.client.head(key)
+      const raw = head?.res?.headers?.etag || head?.etag
+      if (raw) etag = String(raw).replace(/\"/g, '').replace(/"/g, '')
+    } catch {}
+    return { bytes: st.size, etag }
+  }
 }

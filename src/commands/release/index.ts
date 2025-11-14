@@ -1,5 +1,6 @@
 import { Option } from 'commander'
 import dayjs from 'dayjs'
+import fs from 'fs'
 import path from 'path'
 import { program } from '@/cli'
 import { shipitConfig } from '@/config/shipit'
@@ -111,6 +112,57 @@ release
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       logger.fail(`发布失败: ${msg}`)
+      exitWithError(msg)
+    }
+  })
+
+release
+  .command('download [name]')
+  .description('从 Provider 下载指定产物到本地目录')
+  .addOption(
+    new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']),
+  )
+  .option('-o, --output <dir>')
+  .option('-i, --interactive')
+  .action(async (name, options) => {
+    const verbose = Boolean(options.verbose || program.opts().verbose)
+    const logger = new Logger(verbose)
+    try {
+      if (!name) {
+        throw new ShipitError('缺少下载名称')
+      }
+      const provider = options.provider || shipitConfig.release.defaultProvider
+      if (provider !== 'oss') {
+        throw new ShipitError(`未实现的下载 Provider: ${provider}`)
+      }
+      const cfg = shipitConfig.upload.oss
+      if (!cfg) throw new ShipitError('缺少 oss 配置')
+      const outputDir = String(
+        options.output || shipitConfig.release.targetDir || '.',
+      )
+      const allowed = shipitConfig.release.allowedTargetDirPrefix
+      if (
+        allowed &&
+        !normalizePath(outputDir).startsWith(normalizePath(allowed))
+      ) {
+        throw new ShipitError(
+          `下载目录不合法: 需以 ${allowed} 开头，当前为 ${outputDir}`,
+        )
+      }
+      fs.mkdirSync(outputDir, { recursive: true })
+      const key = cfg.prefix ? `${cfg.prefix}${String(name)}` : String(name)
+      const filePath = path.join(outputDir, path.basename(String(name)))
+      logger.start(`正在下载 ${key}`)
+      const oss = createOssProvider(cfg)
+      const res = await oss.download(key, filePath)
+      if (!res?.bytes || res.bytes <= 0) {
+        throw new ShipitError('下载失败或内容为空')
+      }
+      const etagInfo = res.etag ? `, etag=${res.etag}` : ''
+      logger.succeed(`下载成功: ${filePath} (${res.bytes} bytes${etagInfo})`)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      logger.fail(`下载失败: ${msg}`)
       exitWithError(msg)
     }
   })
