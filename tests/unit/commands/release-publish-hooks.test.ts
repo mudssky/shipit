@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
+vi.mock('execa', () => ({
+  execa: vi.fn(async () => ({ exitCode: 0, stdout: '' })),
+}))
+
 vi.mock('@/hooks/executor', () => {
   return { runHooks: vi.fn(async () => {}) }
 })
@@ -23,6 +27,12 @@ vi.mock('@/config/shipit', () => ({
       shell: 'powershell',
     },
   },
+}))
+
+vi.mock('@/providers/oss', () => ({
+  createOssProvider: vi.fn(() => ({
+    download: vi.fn(async () => ({ bytes: 123 })),
+  })),
 }))
 
 describe('release publish hooks 执行', () => {

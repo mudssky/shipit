@@ -1,7 +1,9 @@
 import { Option } from 'commander'
 import dayjs from 'dayjs'
+import { execa } from 'execa'
 import fs from 'fs'
 import inquirer from 'inquirer'
+import os from 'os'
 import path from 'path'
 import { program } from '@/cli'
 import { shipitConfig } from '@/config/shipit'
@@ -121,14 +123,43 @@ release
             return
           }
           if (act === 'publish') {
+            const targetDir = String(
+              options.dir || shipitConfig.release.targetDir,
+            )
+            const allowed = shipitConfig.release.allowedTargetDirPrefix
+            if (
+              allowed &&
+              !normalizePath(targetDir).startsWith(normalizePath(allowed))
+            ) {
+              throw new ShipitError(
+                `发布目录不合法: 需以 ${allowed} 开头，当前为 ${targetDir}`,
+              )
+            }
             if (options.dryRun) {
               logger.succeed(
-                `dry-run: 发布 ${path.basename(String(picked.key))}`,
+                `dry-run: 发布 ${path.basename(
+                  String(picked.key),
+                )} → ${targetDir}`,
               )
               return
             }
+            const key = cfg.prefix
+              ? `${cfg.prefix}${String(picked.key)}`
+              : String(picked.key)
+            const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shipit-'))
+            const tmpFile = path.join(tmpDir, path.basename(String(picked.key)))
             logger.start('正在发布')
-            logger.succeed(`发布准备完成: ${path.basename(String(picked.key))}`)
+            const res = await createOssProvider(cfg).download(key, tmpFile)
+            if (!res?.bytes || res.bytes <= 0) {
+              throw new ShipitError('下载失败或内容为空')
+            }
+            await unzipFile(tmpFile, targetDir)
+            try {
+              fs.unlinkSync(tmpFile)
+            } catch {}
+            logger.succeed(
+              `发布成功: ${path.basename(String(picked.key))} → ${targetDir}`,
+            )
             return
           }
         }
@@ -348,7 +379,23 @@ release
           `发布成功: ${path.basename(String(name))} → ${targetDir}`,
         )
       } else {
-        logger.succeed(`发布准备完成: ${path.basename(name)} → ${targetDir}`)
+        const cfg = shipitConfig.upload.oss
+        if (!cfg) throw new ShipitError('缺少 oss 配置')
+        const key = cfg.prefix ? `${cfg.prefix}${String(name)}` : String(name)
+        const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shipit-'))
+        const tmpFile = path.join(tmpDir, path.basename(String(name)))
+        const oss = createOssProvider(cfg)
+        const res = await oss.download(key, tmpFile)
+        if (!res?.bytes || res.bytes <= 0) {
+          throw new ShipitError('下载失败或内容为空')
+        }
+        await unzipFile(tmpFile, targetDir)
+        try {
+          fs.unlinkSync(tmpFile)
+        } catch {}
+        logger.succeed(
+          `发布成功: ${path.basename(String(name))} → ${targetDir}`,
+        )
       }
       if (enableHooks)
         await runHooks(
@@ -426,4 +473,19 @@ async function readGlobalTableStyle(): Promise<'tsv' | 'table' | undefined> {
   } catch {
     return undefined
   }
+}
+
+async function unzipFile(zipPath: string, destDir: string): Promise<void> {
+  if (process.platform === 'win32') {
+    const cmd = `Expand-Archive -Path "${zipPath}" -DestinationPath "${destDir}" -Force`
+    await execa('powershell.exe', [
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-Command',
+      cmd,
+    ])
+    return
+  }
+  await execa('/bin/bash', ['-lc', `unzip -o "${zipPath}" -d "${destDir}"`])
 }
