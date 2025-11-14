@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseArrayArg, parseIntArg } from './argParser'
+import { parseArrayArg, parseIntArg } from '@/utils/argParser'
 
 describe('argParser', () => {
   it('parseIntArg parses decimal strings', () => {
