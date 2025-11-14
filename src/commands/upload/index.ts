@@ -107,8 +107,16 @@ async function ossUpload(args: {
   const { filePath, name, logger } = args
   const cfg = shipitConfig.upload.oss
   if (!cfg) throw new ShipitError('缺少 oss 上传配置')
+  if (name.includes('/') || name.includes('\\') || name.includes('..')) {
+    throw new ShipitError('非法名称: 不允许包含路径分隔符或..')
+  }
   const provider = createOssProvider(cfg)
   const key = `${cfg.prefix ?? ''}${name}`
+  if (cfg.requiredPrefix && !key.startsWith(cfg.requiredPrefix)) {
+    throw new ShipitError(
+      `上传路径不合法: 需以 ${cfg.requiredPrefix} 开头，当前为 ${key}`,
+    )
+  }
   logger.start('正在上传到 OSS')
   const url = await provider.put(key, filePath)
   const filename = path.basename(key)

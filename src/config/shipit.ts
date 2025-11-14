@@ -27,6 +27,7 @@ const OssUploadSchema = z.object({
   region: z.string().optional(),
   endpoint: z.string().optional(),
   prefix: z.string().default('releases/'),
+  requiredPrefix: z.string().optional(),
   accessKeyId: z.string().optional(),
   accessKeySecret: z.string().optional(),
   securityToken: z.string().optional(),
