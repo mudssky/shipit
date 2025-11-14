@@ -133,15 +133,12 @@ function loadShipitConfig(): ShipitConfig {
     __dirname,
   ]
   const result = searchMultiplePaths(startPaths)
-  if (!result || typeof result.config !== 'object' || result.config === null) {
-    throw new Error(
-      `Shipit configuration file not found or invalid. Expected one of [${searchPlaces.join(
-        ', ',
-      )}].`,
-    )
-  }
-  lastConfigFilepath = result.filepath
-  return ShipitConfigSchema.parse(result.config)
+  const configObj =
+    result && typeof result.config === 'object' && result.config !== null
+      ? result.config
+      : {}
+  lastConfigFilepath = result?.filepath
+  return ShipitConfigSchema.parse(configObj)
 }
 
 let cachedConfig: ShipitConfig | null = null

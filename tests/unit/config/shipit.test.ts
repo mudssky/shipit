@@ -32,15 +32,16 @@ describe('Shipit 配置加载与默认值', () => {
     expect(cfg.upload.defaultProvider).toBe('server')
   })
 
-  it('在找不到配置文件时抛出人类可读错误', async () => {
+  it('在找不到配置文件时返回默认配置且不抛错', async () => {
     vi.doMock('cosmiconfig', () => ({
       cosmiconfigSync: () => ({
         search: () => undefined,
       }),
     }))
     const mod = await import('@/config/shipit')
-    expect(() => (mod.shipitConfig as any).upload).toThrow(
-      /configuration file not found or invalid/i,
-    )
+    const cfg = mod.shipitConfig
+    expect(cfg.upload.defaultProvider).toBe('oss')
+    expect(cfg.release.defaultProvider).toBe('oss')
+    expect(cfg.hooks.shell).toMatch(/powershell|bash/)
   })
 })
