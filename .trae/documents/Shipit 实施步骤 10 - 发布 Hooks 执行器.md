@@ -45,6 +45,20 @@
   - `tsx` 不可用时，JS 走 Node 动态导入；TS 要求使用构建产物（或 Node ≥ 22 开启实验性 TypeScript 支持）。
   - Node 版本建议：≥ 18；如启用 Node ≥ 22 的 TypeScript 实验特性，请在项目配置中明确说明并在 CI 环境安装对应版本。
 
+## Execa 集成与最小示例
+- 内部实现：执行器使用 `execa` 统一管理子进程（Shell 与 JS/TS），传入 `cwd/env/timeout` 并按退出码与输出进行处理。
+- 脚本可用性：项目已安装 `execa`，hooks 脚本内可直接 `import { execa } from 'execa'` 使用（建议加 `preferLocal: true`）。
+- 最小 JS/TS hooks 示例（生成上下文更新）：
+  - 文件：`hooks/beforeRelease.ts`
+  - 内容：
+    - `export async function run(ctx) {`
+    - `  const { stdout } = await (await import('execa')).execa({ preferLocal: true })\`git rev-parse HEAD\``
+    - `  console.log(JSON.stringify({ updates: { commit: stdout } }))`
+    - `}`
+- 最小 Shell hooks 示例：
+  - `hooks.beforeRelease: ['echo Building']`
+  - 平台：Windows 默认 `powershell`，Linux/macOS 默认 `bash`。
+
 ## 模块导出约定
 - 统一命名导出：`export async function run(ctx): Promise<HookResult>`。
 - 返回值结构（用于结果传递）：
@@ -101,6 +115,10 @@
 - 集成：
   - `upload` 与 `release publish` 在 hooks 开启与关闭（`--no-hooks`）下的行为断言。
   - 使用 `vi.mock()` 模拟子进程，避免真实执行。
+
+## 脚本环境中的 execa 注入
+- 不需要额外注入：hooks 脚本直接 `import { execa } from 'execa'` 即可使用（依赖来源于项目）。
+- 统一配置建议：脚本内部可创建带共享选项的实例（例如设置默认 `timeout` 或 `preferLocal`），提升一致性与稳定性。
 
 ## 安全
 - 关闭敏感信息日志；仅在必要时输出命令名与简短结果。
