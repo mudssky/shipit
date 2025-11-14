@@ -17,8 +17,9 @@ export function createOssProvider(cfg: any): OssProvider {
       bucket: cfg.bucket,
       region: cfg.region,
       endpoint: cfg.endpoint,
-      accessKeyId: process.env.ALIYUN_OSS_ACCESS_KEY_ID,
-      accessKeySecret: process.env.ALIYUN_OSS_ACCESS_KEY_SECRET,
+      accessKeyId: cfg.accessKeyId,
+      accessKeySecret: cfg.accessKeySecret,
+      securityToken: cfg.securityToken,
     })
   }
   throw new Error(`未支持的 OSS Provider: ${provider}`)
