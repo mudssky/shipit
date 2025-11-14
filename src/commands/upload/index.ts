@@ -19,6 +19,7 @@ program
   )
   .option('-n, --name <name>')
   .option('-i, --interactive')
+  .option('--dry-run')
   .option('--no-hooks')
   .action(async (file, options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
@@ -37,16 +38,20 @@ program
           const p = runHooks(
             'beforeUpload',
             { provider, artifactName: name, filePath },
-            { logger },
+            { logger, dryRun: Boolean(options.dryRun) },
           )
           if (shipitConfig.hooks.beforeUpload.length > 0) await p
         }
-        await serverUpload({ filePath, name, logger })
+        if (options.dryRun) {
+          logger.log('info', `dry-run: 上传到服务器 ${name}`)
+        } else {
+          await serverUpload({ filePath, name, logger })
+        }
         if (enableHooks) {
           const p = runHooks(
             'afterUpload',
             { provider, artifactName: name, filePath },
-            { logger },
+            { logger, dryRun: Boolean(options.dryRun) },
           )
           if (shipitConfig.hooks.afterUpload.length > 0) await p
         }
@@ -62,11 +67,16 @@ program
               filePath,
               prefix: shipitConfig.upload.oss?.prefix ?? '',
             },
-            { logger },
+            { logger, dryRun: Boolean(options.dryRun) },
           )
           if (shipitConfig.hooks.beforeUpload.length > 0) await p
         }
-        await ossUpload({ filePath, name, logger })
+        if (options.dryRun) {
+          const key = `${shipitConfig.upload.oss?.prefix ?? ''}${name}`
+          logger.log('info', `dry-run: 上传到 OSS ${key}`)
+        } else {
+          await ossUpload({ filePath, name, logger })
+        }
         if (enableHooks) {
           const p = runHooks(
             'afterUpload',
@@ -76,7 +86,7 @@ program
               filePath,
               prefix: shipitConfig.upload.oss?.prefix ?? '',
             },
-            { logger },
+            { logger, dryRun: Boolean(options.dryRun) },
           )
           if (shipitConfig.hooks.afterUpload.length > 0) await p
         }

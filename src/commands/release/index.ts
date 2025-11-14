@@ -60,6 +60,7 @@ release
   )
   .option('-d, --dir <dir>')
   .option('--no-hooks')
+  .option('--dry-run')
   .option('-i, --interactive')
   .action(async (name, options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
@@ -82,7 +83,7 @@ release
         await runHooks(
           'beforeRelease',
           { provider, targetDir, artifactName: String(name) },
-          { logger },
+          { logger, dryRun: Boolean(options.dryRun) },
         )
       if (!name) {
         logger.fail('未指定发布产物名称')
@@ -94,12 +95,16 @@ release
       if (provider !== 'oss' && provider !== 'server') {
         throw new ShipitError(`未实现的发布 Provider: ${provider}`)
       }
+      if (options.dryRun) {
+        logger.succeed(`dry-run: 发布 ${path.basename(name)} → ${targetDir}`)
+        return
+      }
       logger.succeed(`发布准备完成: ${path.basename(name)} → ${targetDir}`)
       if (enableHooks)
         await runHooks(
           'afterRelease',
           { provider, targetDir, artifactName: String(name) },
-          { logger },
+          { logger, dryRun: Boolean(options.dryRun) },
         )
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
