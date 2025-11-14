@@ -27,7 +27,7 @@
     "@types/imapflow": "^1.0.22",
     "@types/inquirer": "^9.0.8",
     "@types/node": "^24.10.1",
-    "@typescript/native-preview": "7.0.0-dev.20251113.1",
+    "@typescript/native-preview": "7.0.0-dev.20251114.1",
     "@vitest/coverage-v8": "^4.0.8",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
