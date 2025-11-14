@@ -2,9 +2,9 @@
 
 import { program } from './cli'
 
-export { defineConfig } from './config/shipit'
-export type { ShipitConfig, ShipitUserConfig } from './config/shipit'
 export type { GlobalEnvConfig } from './config'
+export type { ShipitConfig, ShipitUserConfig } from './config/shipit'
+export { defineConfig } from './config/shipit'
 
 async function run() {
   await import('@/commands/upload')
