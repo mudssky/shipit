@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { program } from '@/cli'
 import { shipitConfig } from '@/config/shipit'
+import { createOssProvider } from '@/providers/oss'
 import { exitWithError, ShipitError } from '@/utils/errors'
 import { Logger } from '@/utils/logger'
 
@@ -30,6 +31,10 @@ program
       }
       if (provider === 'server') {
         await serverUpload({ filePath, name, logger })
+        return
+      }
+      if (provider === 'oss') {
+        await ossUpload({ filePath, name, logger })
         return
       }
       throw new ShipitError(`未实现的上传 Provider: ${provider}`)
@@ -92,4 +97,20 @@ async function serverUpload(args: {
   const finalPath = data?.path || data?.url || data?.target || ''
   const filename = path.basename(finalPath || name)
   logger.succeed(`上传成功: ${filename}`)
+}
+
+async function ossUpload(args: {
+  filePath: string
+  name: string
+  logger: Logger
+}): Promise<void> {
+  const { filePath, name, logger } = args
+  const cfg = shipitConfig.upload.oss
+  if (!cfg) throw new ShipitError('缺少 oss 上传配置')
+  const provider = createOssProvider(cfg)
+  const key = `${cfg.prefix ?? ''}${name}`
+  logger.start('正在上传到 OSS')
+  const url = await provider.put(key, filePath)
+  const filename = path.basename(key)
+  logger.succeed(`上传成功: ${filename}${url ? ` (${url})` : ''}`)
 }
