@@ -9,6 +9,7 @@ import { runHooks } from '@/hooks/executor'
 import { createOssProvider } from '@/providers/oss'
 import { exitWithError, ShipitError } from '@/utils/errors'
 import { Logger } from '@/utils/logger'
+import { formatName } from '@/utils/naming'
 
 program
   .command('upload <file>')
@@ -99,22 +100,6 @@ program
       exitWithError(msg)
     }
   })
-
-function formatName(tpl: string): string {
-  const d = new Date()
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const map: Record<string, string> = {
-    '{yyyy}': String(d.getFullYear()),
-    '{MM}': pad(d.getMonth() + 1),
-    '{dd}': pad(d.getDate()),
-    '{HH}': pad(d.getHours()),
-    '{mm}': pad(d.getMinutes()),
-    '{ss}': pad(d.getSeconds()),
-  }
-  let out = tpl
-  for (const k of Object.keys(map)) out = out.replaceAll(k, map[k])
-  return out
-}
 
 function resolveHeaders(
   headers?: Record<string, string>,
