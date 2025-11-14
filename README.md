@@ -9,6 +9,17 @@
 - 构建：`pnpm build`
 - 质量检查：`pnpm qa`（类型检查 → 格式化 → 测试）
 
+## 本地使用
+- 直接运行（不依赖命令安装）：`node dist/index.js --help`
+- 命令模式（bin，全局链接）：
+  - 初始化：`pnpm build && pnpm link --global`
+  - 使用：`shipit upload <file>`、`shipit release list`、`shipit release publish`
+  - 取消链接：`pnpm unlink --global`
+- 在其他项目中使用（本地开发联调）：
+  - 在本仓库执行：`pnpm link --global`
+  - 在目标项目执行：`pnpm link @mudssky/shipit`，随后可直接运行 `shipit`
+- 说明：本包标记为 `private: true`，不发布到 npm，推荐通过 `pnpm link` 在本地以命令形式使用。
+
 ## 配置
 - 配置文件：`shipit.config.ts|js`
 - 示例字段：
