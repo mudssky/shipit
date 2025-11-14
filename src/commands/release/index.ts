@@ -2,6 +2,7 @@ import { Option } from 'commander'
 import path from 'path'
 import { program } from '@/cli'
 import { shipitConfig } from '@/config/shipit'
+import { runHooks } from '@/hooks/executor'
 import { createOssProvider } from '@/providers/oss'
 import { exitWithError, ShipitError } from '@/utils/errors'
 import { Logger } from '@/utils/logger'
@@ -76,6 +77,13 @@ release
         )
       }
       logger.start('正在发布')
+      const enableHooks = options.hooks !== false
+      if (enableHooks)
+        await runHooks(
+          'beforeRelease',
+          { provider, targetDir, artifactName: String(name) },
+          { logger },
+        )
       if (!name) {
         logger.fail('未指定发布产物名称')
         throw new ShipitError('缺少发布名称')
@@ -87,6 +95,12 @@ release
         throw new ShipitError(`未实现的发布 Provider: ${provider}`)
       }
       logger.succeed(`发布准备完成: ${path.basename(name)} → ${targetDir}`)
+      if (enableHooks)
+        await runHooks(
+          'afterRelease',
+          { provider, targetDir, artifactName: String(name) },
+          { logger },
+        )
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       logger.fail(`发布失败: ${msg}`)

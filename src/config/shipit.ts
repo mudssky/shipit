@@ -55,11 +55,22 @@ const ReleaseSchema = z.object({
   listOutputStyle: z.enum(['tsv', 'table']).default('tsv'),
 })
 
+const HookItemObjectSchema = z.object({
+  type: z.enum(['shell', 'js', 'ts']).optional(),
+  value: z.string(),
+  engine: z.enum(['tsx', 'node']).optional(),
+  shell: z.enum(['bash', 'powershell']).optional(),
+  workingDir: z.string().optional(),
+  timeoutMs: z.number().optional(),
+})
+
+const HookItemSchema = z.union([z.string(), HookItemObjectSchema])
+
 const HooksSchema = z.object({
-  beforeUpload: z.array(z.string()).default([]),
-  afterUpload: z.array(z.string()).default([]),
-  beforeRelease: z.array(z.string()).default([]),
-  afterRelease: z.array(z.string()).default([]),
+  beforeUpload: z.array(HookItemSchema).default([]),
+  afterUpload: z.array(HookItemSchema).default([]),
+  beforeRelease: z.array(HookItemSchema).default([]),
+  afterRelease: z.array(HookItemSchema).default([]),
   shell: z
     .string()
     .default(process.platform === 'win32' ? 'powershell' : 'bash'),

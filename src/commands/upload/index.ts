@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { program } from '@/cli'
 import { shipitConfig } from '@/config/shipit'
+import { runHooks } from '@/hooks/executor'
 import { createOssProvider } from '@/providers/oss'
 import { exitWithError, ShipitError } from '@/utils/errors'
 import { Logger } from '@/utils/logger'
@@ -18,6 +19,7 @@ program
   )
   .option('-n, --name <name>')
   .option('-i, --interactive')
+  .option('--no-hooks')
   .action(async (file, options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)
@@ -26,15 +28,58 @@ program
       const filePath = file || shipitConfig.artifact.defaultPath
       const name =
         options.name || formatName(shipitConfig.artifact.nameTemplate)
+      const enableHooks = options.hooks !== false
       if (!fs.existsSync(filePath)) {
         throw new ShipitError(`文件不存在: ${filePath}`)
       }
       if (provider === 'server') {
+        if (enableHooks) {
+          const p = runHooks(
+            'beforeUpload',
+            { provider, artifactName: name, filePath },
+            { logger },
+          )
+          if (shipitConfig.hooks.beforeUpload.length > 0) await p
+        }
         await serverUpload({ filePath, name, logger })
+        if (enableHooks) {
+          const p = runHooks(
+            'afterUpload',
+            { provider, artifactName: name, filePath },
+            { logger },
+          )
+          if (shipitConfig.hooks.afterUpload.length > 0) await p
+        }
         return
       }
       if (provider === 'oss') {
+        if (enableHooks) {
+          const p = runHooks(
+            'beforeUpload',
+            {
+              provider,
+              artifactName: name,
+              filePath,
+              prefix: shipitConfig.upload.oss?.prefix ?? '',
+            },
+            { logger },
+          )
+          if (shipitConfig.hooks.beforeUpload.length > 0) await p
+        }
         await ossUpload({ filePath, name, logger })
+        if (enableHooks) {
+          const p = runHooks(
+            'afterUpload',
+            {
+              provider,
+              artifactName: name,
+              filePath,
+              prefix: shipitConfig.upload.oss?.prefix ?? '',
+            },
+            { logger },
+          )
+          if (shipitConfig.hooks.afterUpload.length > 0) await p
+        }
         return
       }
       throw new ShipitError(`未实现的上传 Provider: ${provider}`)
