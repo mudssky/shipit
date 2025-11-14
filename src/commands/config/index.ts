@@ -95,7 +95,7 @@ cmd
 cmd
   .command('generate')
   .description('输出示例配置内容到标准输出')
-  .option('--out <file>')
+  .option('-o, --out <file>')
   .action((options: { out?: string }) => {
     function resolveExamplePath(): string {
       const req = createRequire(__filename)
