@@ -10,10 +10,11 @@ async function run() {
   await import('@/commands/upload')
   await import('@/commands/release')
   await import('@/commands/config')
-  program.parse(process.argv)
+  if (process.argv.length <= 2) {
+    program.outputHelp()
+    return
+  }
+  await program.parseAsync(process.argv)
 }
 
-if (typeof require !== 'undefined' && require.main === module) {
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  run()
-}
+void run()
