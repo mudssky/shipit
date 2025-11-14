@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 
 import { program } from './cli'
-// import "@/commands/commit/commit";
-// import '@/commands/dingmail'
-import '@/commands/upload'
-import '@/commands/release'
-import '@/commands/config'
 
-program.parse(process.argv)
-export type { ShipitConfig, ShipitUserConfig } from '@/config/shipit'
-export type { GlobalEnvConfig } from '@/config'
+export { defineConfig } from './config/shipit'
+export type { ShipitConfig, ShipitUserConfig } from './config/shipit'
+export type { GlobalEnvConfig } from './config'
+
+async function run() {
+  await import('@/commands/upload')
+  await import('@/commands/release')
+  await import('@/commands/config')
+  program.parse(process.argv)
+}
+
+if (typeof require !== 'undefined' && require.main === module) {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  run()
+}
