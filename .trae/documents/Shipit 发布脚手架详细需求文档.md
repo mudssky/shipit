@@ -255,6 +255,19 @@ export default defineConfig({
 
 * 错误与退出码：统一异常类型，命令失败返回非零码，方便 CI 集成。
 
+### 已完成（2025-11-14）
+
+* 依赖管理：已新增 `axios` 与 `form-data`，用于 `server` Provider 的 `multipart/form-data` 上传（`package.json`）。
+* 统一日志：已新增 `Logger` 模块并在命令接入，`-v/--verbose` 在顶层 CLI 统一支持（`src/utils/logger.ts`、`src/cli.ts`）。
+* 错误与退出码：已新增统一异常类型与退出码处理，失败时输出上下文并设置非零退出码（`src/utils/errors.ts`）。
+* 上传（server）：已实现服务端上传，读取 `shipit` 配置 `upload.server.endpoint/headers/targetDir`，支持 `${ENV}` 头部占位替换，成功后输出最终文件名（`src/commands/upload/index.ts`）。
+
+使用示例：
+
+* 构建：`pnpm build`
+* 上传：`node dist/index.js upload ./dist/release.zip -p server -n release-YYYYMMDDHHmmss.zip`
+* 详日志：在命令或顶层添加 `-v`/`--verbose`
+
 ***
 
-请确认以上需求文档与约束。如果确认，我将按此文档在现有 Commander 插件架构下新增 `shipit` 命令组、配置与 Provider 抽象，并补全依赖与示例配置。
+请确认以上需求文档与约束。当前已完成三项改进（依赖、统一日志、错误与退出码）及 `server` 上传的接入；后续可继续实现 `oss/scp` Provider 与 `release list/publish`。
