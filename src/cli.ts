@@ -1,32 +1,11 @@
-import { Command } from 'commander'
-
-const program = new Command()
-
-program
-  .name('shipit')
-  .description('一个使用commander.js的CLI示例')
-  .version('0.0.2')
-  .option('-v, --verbose', '输出详细日志信息')
+import { Command } from "commander";
+import packageJson from "../package.json";
+const program = new Command();
 
 program
-  .command('greet <name>')
-  .description('向某人问好')
-  .option('-t, --title <title>', '添加称呼')
-  .action((name, options) => {
-    const greeting = `Hello, ${
-      options.title ? options.title + ' ' : ''
-    }${name}!`
-    console.log(greeting)
-  })
+  .name("shipit")
+  .description("一个用于发布前端项目的CLI工具")
+  .version(packageJson.version)
+  .option("-v, --verbose", "输出详细日志信息");
 
-program
-  .command('calculate <numbers...>')
-  .description('计算数字之和')
-  .action((numbers) => {
-    const sum = numbers.reduce(
-      (acc: number, num: number) => acc + Number(num),
-      0,
-    )
-    console.log(`总和: ${sum}`)
-  })
-export { program }
+export { program };
