@@ -39,6 +39,61 @@
 - 当 hook 为对象形态（可选扩展）：`{ type: 'shell'|'js'|'ts', value: '...' }` → 按 `type` 明确选择执行方式，`js/ts` 始终走 `tsx`。
 - 失败与回退：无法启动指定执行器或脚本导出不符合约定时，抛 `ShipitError` 并终止阶段。
 
+## 执行器与引擎选择
+- 默认执行器：`tsx`。统一以 `tsx` 运行 `.js/.ts` hooks，避免区分 JS/TS。
+- 回退策略：
+  - `tsx` 不可用时，JS 走 Node 动态导入；TS 要求使用构建产物（或 Node ≥ 22 开启实验性 TypeScript 支持）。
+  - Node 版本建议：≥ 18；如启用 Node ≥ 22 的 TypeScript 实验特性，请在项目配置中明确说明并在 CI 环境安装对应版本。
+
+## 模块导出约定
+- 统一命名导出：`export async function run(ctx): Promise<HookResult>`。
+- 返回值结构（用于结果传递）：
+  - `type HookResult = { updates?: Record<string, any>, artifacts?: string[], message?: string }`
+  - 若返回 `updates`，将合并到当前命令上下文并传递给后续同命令阶段的 hooks。
+- 禁止默认导出，避免加载歧义。
+
+## 上下文与环境变量
+- 环境变量前缀：统一使用 `SHIPIT_*`。
+- 建议映射：
+  - `SHIPIT_PROVIDER`、`SHIPIT_ARTIFACT_NAME`、`SHIPIT_TARGET_DIR`、`SHIPIT_PREFIX`
+  - 复杂上下文：`SHIPIT_CTX_JSON`（JSON 字符串，包含全部 `ctx`）。
+- 运行目录与路径：
+  - 默认在命令执行时的 `cwd` 运行，可通过配置 `workingDir` 指定。
+  - 路径统一转为绝对路径，并做分隔符归一（Windows 与 POSIX 统一）。
+
+## Shell 引号与转义
+- 跨平台安全转义规则：
+  - PowerShell：优先使用双引号，内部引号与特殊字符按 PowerShell 规则转义（如 ``\"`` 或反引号）。
+  - Bash：使用单/双引号组合并对 `$`、`"`、空格等做转义；通过 `-lc` 保证在登录 shell 环境执行。
+- 实现层面提供统一的转义工具并避免拼接注入；日志仅输出命令名与简短结果。
+
+## 并发与顺序
+- 同阶段 hooks 串行执行、失败即停；不启用并发以保证幂等与可控风险。
+- 提供 `--dry-run`：仅打印将执行的 hooks 与上下文，不实际运行，便于排查与审阅。
+
+## 结果传递与后续流程
+- JS/TS hooks 的 `run(ctx)` 返回 `updates` 将合并到上下文并传递给后续 hooks；可用于生成工件路径或附加标记。
+- Shell hooks默认不解析输出为结构化结果；如需传递，建议改用 JS/TS hooks。
+
+## 配置 Schema 扩展
+- 在保持现有 `string | string[]` 的基础上，支持对象形态：
+  - `{ type: 'shell'|'js'|'ts', value: string, engine?: 'tsx'|'node', shell?: 'bash'|'powershell', workingDir?: string, timeoutMs?: number }`
+- 优先级：对象形态 > 扩展名推断 > 平台默认。
+
+## 错误分类与处理
+- 分类建议：
+  - `HookExitError`：子进程非零退出码。
+  - `HookTimeoutError`：超过 `timeoutMs`。
+  - `HookEngineNotFoundError`：指定执行器不可用。
+- 命令层统一捕获为 `ShipitError` 并设置非零退出码，日志输出精简信息。
+
+## 超时与重试
+- 默认启用超时（如 `timeoutMs = 60000`）；暂不启用重试以避免副作用。
+
+## 安全策略
+- 不打印敏感信息与环境变量内容；输出做中间截断与长度限制。
+- 仅记录命令名、阶段与简短结果；失败日志包含错误分类与建议。
+
 ## 测试
 - 单元：
   - `executor` 在命令链中执行顺序正确；遇到非零退出码抛错。
