@@ -80,6 +80,14 @@ const ShipitConfigSchema = z.object({
 })
 
 export type ShipitConfig = z.infer<typeof ShipitConfigSchema>
+export type ShipitUserConfig = z.input<typeof ShipitConfigSchema> &
+  Record<string, unknown>
+
+export function defineConfig<
+  T extends ShipitUserConfig & Record<string, unknown>,
+>(config: T): T {
+  return config
+}
 
 function loadShipitConfig(): ShipitConfig {
   const result = explorer.search()
