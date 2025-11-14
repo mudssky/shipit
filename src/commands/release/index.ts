@@ -1,6 +1,5 @@
 import { Option } from 'commander'
 import dayjs from 'dayjs'
-import { execa } from 'execa'
 import fs from 'fs'
 import inquirer from 'inquirer'
 import os from 'os'
@@ -481,6 +480,7 @@ async function unzipFile(zipPath: string, destDir: string): Promise<void> {
   }
   if (process.platform === 'win32') {
     try {
+      const { execa } = await import('execa')
       await execa('powershell.exe', [
         '-NoProfile',
         '-ExecutionPolicy',
@@ -499,6 +499,7 @@ async function unzipFile(zipPath: string, destDir: string): Promise<void> {
       return
     } catch (e: any) {
       try {
+        const { execa } = await import('execa')
         await execa('tar', ['-xf', zipPath, '-C', destDir])
         return
       } catch (e2: any) {
@@ -510,11 +511,13 @@ async function unzipFile(zipPath: string, destDir: string): Promise<void> {
     }
   }
   try {
+    const { execa } = await import('execa')
     await execa('/bin/bash', ['-lc', `command -v unzip >/dev/null 2>&1`])
     await execa('/bin/bash', ['-lc', `unzip -o "${zipPath}" -d "${destDir}"`])
     return
   } catch (e: any) {
     try {
+      const { execa } = await import('execa')
       await execa('/bin/bash', ['-lc', `command -v 7z >/dev/null 2>&1`])
       await execa('/bin/bash', ['-lc', `7z x -y -o"${destDir}" "${zipPath}"`])
       return

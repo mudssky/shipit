@@ -1,4 +1,3 @@
-import { execa } from 'execa'
 import path from 'path'
 import { shipitConfig } from '@/config/shipit'
 import { ShipitError } from '@/utils/errors'
@@ -53,6 +52,7 @@ async function runShell(
   timeoutMs?: number,
 ): Promise<void> {
   if (sh === 'powershell') {
+    const { execa } = await import('execa')
     const res = await execa(
       'powershell.exe',
       ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', cmd],
@@ -62,6 +62,7 @@ async function runShell(
       throw new ShipitError('HookExitError')
     return
   }
+  const { execa } = await import('execa')
   const res = await execa('/bin/bash', ['-lc', cmd], {
     cwd,
     env,
@@ -77,6 +78,7 @@ async function runScriptTsx(
   env: NodeJS.ProcessEnv,
   timeoutMs?: number,
 ): Promise<HookResult | undefined> {
+  const { execa } = await import('execa')
   const res = await execa('tsx', [file], {
     cwd,
     env,
