@@ -8,3 +8,5 @@ import '@/commands/release'
 import '@/commands/config'
 
 program.parse(process.argv)
+export type { ShipitConfig, ShipitUserConfig } from '@/config/shipit'
+export type { GlobalEnvConfig } from '@/config'

@@ -4,7 +4,7 @@
     "target": "ESNext", // 使用较新的 ECMAScript 特性
     "module": "CommonJS", // CLI 工具通常使用 CommonJS 模块
     "outDir": "./dist", // 输出目录
-    // "rootDir": "./src", // 源代码目录
+    "rootDir": "./src", // 源代码目录
 
     /* 模块解析 */
     "esModuleInterop": true,
@@ -28,5 +28,7 @@
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules", "tests", "rspack.config.ts", "vitest.config.ts", "shipit.config.ts", "shipit.config.local.ts", "shipit.config.example.ts"]
 }
