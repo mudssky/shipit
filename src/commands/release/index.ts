@@ -28,13 +28,29 @@ release
   .command('list')
   .description('列出近n个产物')
   .addOption(
-    new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']),
+    new Option('-p, --provider <provider>', '列表 Provider')
+      .choices(['server', 'oss', 'scp'])
+      .default(shipitConfig.release.defaultProvider),
   )
-  .addOption(new Option('-n, --limit <limit>').default(10))
-  .addOption(new Option('--style <style>').choices(['tsv', 'table']))
-  .option('-i, --interactive')
-  .option('--no-interactive')
-  .option('--yes')
+  .addOption(new Option('-n, --limit <limit>', '列表数量上限').default(10))
+  .addOption(
+    new Option('--style <style>', '输出样式: tsv 或 table').choices([
+      'tsv',
+      'table',
+    ]),
+  )
+  .option('-i, --interactive', '启用交互式选择与确认')
+  .option('--no-interactive', '禁用交互式流程')
+  .option('--yes', '自动确认交互中的提示')
+  .addHelpText(
+    'afterAll',
+    [
+      '',
+      '示例:',
+      '  shipit release list -p oss -n 20 --style table',
+      '  shipit release list -p server --interactive',
+    ].join('\n'),
+  )
   .action(async (options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)
@@ -251,14 +267,28 @@ release
   .command('publish [name]')
   .description('发布指定名称的产物')
   .addOption(
-    new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']),
+    new Option('-p, --provider <provider>', '发布 Provider')
+      .choices(['server', 'oss', 'scp'])
+      .default(shipitConfig.release.defaultProvider),
   )
-  .option('-d, --dir <dir>')
-  .option('--no-hooks')
-  .option('--dry-run')
-  .option('-i, --interactive')
-  .option('--no-interactive')
-  .option('--yes')
+  .option(
+    '-d, --dir <dir>',
+    `发布目标目录，默认 ${String(shipitConfig.release.targetDir)}`,
+  )
+  .option('--no-hooks', '禁用配置中的 Hooks 执行')
+  .option('--dry-run', '演练模式，仅打印将执行的操作')
+  .option('-i, --interactive', '启用交互式选择与确认')
+  .option('--no-interactive', '禁用交互式流程')
+  .option('--yes', '自动确认交互中的提示')
+  .addHelpText(
+    'afterAll',
+    [
+      '',
+      '示例:',
+      '  shipit release publish artifact.zip -p server -d D:/site',
+      '  shipit release publish artifact.zip -p oss --dry-run',
+    ].join('\n'),
+  )
   .action(async (name, options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)
@@ -413,10 +443,21 @@ release
   .command('download [name]')
   .description('从 Provider 下载指定产物到本地目录')
   .addOption(
-    new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']),
+    new Option('-p, --provider <provider>', '下载 Provider（仅支持 oss）')
+      .choices(['server', 'oss', 'scp'])
+      .default('oss'),
   )
-  .option('-o, --output <dir>')
-  .option('-i, --interactive')
+  .option(
+    '-o, --output <dir>',
+    `输出目录，默认 ${String(shipitConfig.release.targetDir || '.')}`,
+  )
+  .option('-i, --interactive', '启用交互式选择与确认')
+  .addHelpText(
+    'afterAll',
+    ['', '示例:', '  shipit release download artifact.zip -o ./downloads'].join(
+      '\n',
+    ),
+  )
   .action(async (name, options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)

@@ -16,12 +16,23 @@ program
   .description('上传指定zip产物')
   .option('-v, --verbose', '输出详细日志信息')
   .addOption(
-    new Option('-p, --provider <provider>').choices(['server', 'oss', 'scp']),
+    new Option('-p, --provider <provider>', '上传 Provider')
+      .choices(['server', 'oss', 'scp'])
+      .default(shipitConfig.upload.defaultProvider),
   )
-  .option('-n, --name <name>')
-  .option('-i, --interactive')
-  .option('--dry-run')
-  .option('--no-hooks')
+  .option('-n, --name <name>', '上传名称，默认按模板自动生成')
+  .option('-i, --interactive', '启用交互式确认与选择')
+  .option('--dry-run', '演练模式，仅打印将执行的操作')
+  .option('--no-hooks', '禁用配置中的 Hooks 执行')
+  .addHelpText(
+    'afterAll',
+    [
+      '',
+      '示例:',
+      '  shipit upload ./dist/release.zip -p server',
+      '  shipit upload ./dist/release.zip -p oss --dry-run',
+    ].join('\n'),
+  )
   .action(async (file, options) => {
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)

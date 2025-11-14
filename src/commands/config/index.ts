@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 import { program } from '@/cli'
 import {
@@ -5,7 +6,6 @@ import {
   getShipitConfigFilepath,
   validateShipitConfigDetailed,
 } from '@/config/shipit'
-import fs from 'fs'
 
 const cmd = program.command('config').description('配置相关工具')
 
@@ -42,7 +42,8 @@ cmd
           if (val && typeof val === 'object') {
             obj[key] = '[object redacted]'
           } else if (typeof val === 'string') {
-            obj[key] = val.length > 4 ? `${val.slice(0, 2)}***${val.slice(-2)}` : '***'
+            obj[key] =
+              val.length > 4 ? `${val.slice(0, 2)}***${val.slice(-2)}` : '***'
           } else {
             obj[key] = '***'
           }

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { program } from "./cli";
+import { program } from './cli'
 // import "@/commands/commit/commit";
 // import '@/commands/dingmail'
-import "@/commands/upload";
-import "@/commands/release";
-import "@/commands/config";
+import '@/commands/upload'
+import '@/commands/release'
+import '@/commands/config'
 
-program.parse(process.argv);
+program.parse(process.argv)

@@ -11,7 +11,10 @@ describe('getShipitConfigFilepath', () => {
         search: () => ({
           config: {
             artifact: {},
-            upload: { defaultProvider: 'server', server: { endpoint: 'http://x', targetDir: 'releases' } },
+            upload: {
+              defaultProvider: 'server',
+              server: { endpoint: 'http://x', targetDir: 'releases' },
+            },
           },
           filepath: 'C:' + '\\' + 'shipit.config.ts',
         }),
