@@ -7,7 +7,7 @@
 - OSS：按 `prefix` 查询，按 `LastModified` 倒序，取前 `n`（默认 10）。
 - Server：列举 `targetDir` 下的 zip 文件。
 - 输出展示（可配置）：
-  - 全局配置项：`release.listOutputStyle: 'tsv' | 'table'`，默认 `'tsv'`。
+  - 样式优先级链：`--style > shipit.release.listOutputStyle > global.TABLE_STYLE > 'tsv'`。
   - `'tsv'`：使用制表符分隔输出，便于脚本消费与复制；示例行格式：`Key\tLastModified`。
   - `'table'`：使用 `console.table` 渲染表格，便于人类阅读。
   - 进度提示与表格渲染顺序：先结束进度（`succeed`），再输出列表，避免进度态影响表格布局。
@@ -17,6 +17,7 @@
 - 下载（OSS → 本地临时目录）或从 Server 本地拷贝选中的 zip。
 - 执行 `beforeRelease` 钩子 → 解压到 `targetDir` → 执行 `afterRelease` 钩子。
 - 支持 `--no-hooks` 跳过钩子。
+- 解压实现：通过 `execa` 调用平台命令，Windows 使用 PowerShell `Expand-Archive`，Linux 使用 `unzip`。
 
 ## 失败与退出码
 - 任一步骤失败即终止并返回非零退出码。

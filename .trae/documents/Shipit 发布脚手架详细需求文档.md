@@ -10,6 +10,12 @@
 > - `Shipit 实施步骤 07 - 测试与验收.md`
 > - `Shipit 实施步骤 08 - 可扩展性与架构.md`
 > - `Shipit 实施步骤 09 - 交付物与进度索引.md`
+> - `Shipit 实施步骤 10 - 发布 Hooks 执行器.md`
+> - `Shipit 实施步骤 11 - 命名策略模块.md`
+> - `Shipit 实施步骤 12 - Provider 下载与校验.md`
+> - `Shipit 实施步骤 13 - Server Provider（列表与发布）.md`
+> - `Shipit 实施步骤 14 - 交互式体验.md`
+> - `Shipit 实施步骤 15 - 全局输出样式配置.md`
 
 ## 背景与目标
 
@@ -284,6 +290,7 @@ export default defineConfig({
 * 命名策略：已实现基于模板的默认命名（保留扩展名），命令 `-n` 可覆盖（`src/utils/naming.ts`）。
 * 交互式体验（步骤14）：新增 `src/utils/interactive.ts` 并在 `release list/publish` 集成交互；`--no-interactive`、`--yes`；`release.listLargeThreshold` 默认 30 可配置；Hooks 概览按类型与数量，`--verbose` 显示详细脚本。
 * 全局输出样式（步骤15）：新增 `GlobalEnvConfig.TABLE_STYLE`，建立优先级链 `--style > release.listOutputStyle > global.TABLE_STYLE > 'tsv'`，`release.listOutputStyle` 改为可选（`src/config/index.ts`、`src/config/shipit.ts`、`src/commands/release/index.ts`）。
+* 发布（oss）：在 `release publish -p oss` 中实现“下载 → 解压到目标目录”，Windows 使用 PowerShell `Expand-Archive`，Linux 使用 `unzip`（通过 `execa` 调用）。
 
 使用示例：
 
