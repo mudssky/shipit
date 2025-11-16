@@ -65,7 +65,15 @@ release
         if (!cfg) throw new ShipitError('缺少 oss 配置')
         logger.start('正在从 OSS 获取列表')
         const oss = createOssProvider(cfg)
-        const items = await oss.list(cfg.prefix ?? '', limit)
+        const items = (await oss.list(cfg.prefix ?? '', limit)).sort((a, b) => {
+          const at = a.lastModified
+            ? dayjs(String(a.lastModified)).valueOf()
+            : 0
+          const bt = b.lastModified
+            ? dayjs(String(b.lastModified)).valueOf()
+            : 0
+          return bt - at
+        })
         const rows = items.map((it) => {
           const lm = it.lastModified ? String(it.lastModified) : ''
           const fm = lm ? dayjs(lm).format('YYYY-MM-DD HH:mm:ss') : ''
@@ -185,7 +193,15 @@ release
         if (!cfg) throw new ShipitError('缺少 server 配置')
         logger.start('正在从 Server 获取列表')
         const server = createServerProvider(cfg)
-        const items = await server.list('', limit)
+        const items = (await server.list('', limit)).sort((a, b) => {
+          const at = a.lastModified
+            ? dayjs(String(a.lastModified)).valueOf()
+            : 0
+          const bt = b.lastModified
+            ? dayjs(String(b.lastModified)).valueOf()
+            : 0
+          return bt - at
+        })
         const rows = items.map((it) => {
           const lm = it.lastModified ? String(it.lastModified) : ''
           const fm = lm ? dayjs(lm).format('YYYY-MM-DD HH:mm:ss') : ''
