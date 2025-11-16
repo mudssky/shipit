@@ -196,7 +196,7 @@ cmd
         const tplFiles = files
           .filter((f) => /\.([jt]s)$/i.test(f))
           .map((f) => ({
-            name: f.replace(/\.[jt]s$/i, ''),
+            name: path.basename(f),
             file: path.join(dir, f),
           }))
         return tplFiles.sort((a, b) => a.name.localeCompare(b.name))
@@ -282,7 +282,10 @@ cmd
         if ((options as any).json) {
           console.log(
             JSON.stringify(
-              templates.map((t) => ({ name: t.name, file: t.file })),
+              templates.map((t) => ({
+                name: path.basename(t.file),
+                file: t.file,
+              })),
               null,
               2,
             ),
@@ -290,7 +293,7 @@ cmd
         } else {
           console.log('可用模板:')
           for (const t of templates) {
-            console.log(`  - ${t.name} -> ${t.file}`)
+            console.log(`  - ${path.basename(t.file)} -> ${t.file}`)
           }
         }
         return

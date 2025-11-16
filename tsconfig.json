@@ -30,11 +30,10 @@
       "@mudssky/shipit": ["./src/index.ts"]
     }
   },
-  "include": ["src/**/*.ts", "examples/**/*.ts"],
+  "include": ["src/**/*.ts", "examples/**/*.ts", "tests/**/*.ts"],
   "exclude": [
     "dist",
     "node_modules",
-    "tests",
     "rspack.config.ts",
     "vitest.config.ts",
     "shipit.config.ts",

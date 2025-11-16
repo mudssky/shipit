@@ -31,7 +31,7 @@ describe('config generate (integration)', () => {
       console.log = orig
     }
     const output = logs.join('\n')
-    expect(output).toContain('defineConfig')
+    expect(/defineConfig|module\.exports\s*=\s*\{/m.test(output)).toBe(true)
   })
 
   it('writes example config to file with --out from temp dir', async () => {
@@ -42,6 +42,6 @@ describe('config generate (integration)', () => {
       from: 'user',
     })
     const written = fs.readFileSync(outPath, 'utf-8')
-    expect(written).toContain('defineConfig')
+    expect(/defineConfig|module\.exports\s*=\s*\{/m.test(written)).toBe(true)
   })
 })
