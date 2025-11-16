@@ -7,6 +7,7 @@ import {
   getShipitConfigFilepath,
   validateShipitConfigDetailed,
 } from '@/config/shipit'
+import { pickFromList } from '@/utils/interactive'
 
 const cmd = program.command('config').description('配置相关工具')
 
@@ -96,51 +97,148 @@ cmd
   .command('generate')
   .description('输出示例配置内容到标准输出')
   .option('-o, --out <file>')
-  .action((options: { out?: string }) => {
-    function resolveExamplePath(): string {
-      const req = createRequire(__filename)
-      const candidate3 = (() => {
-        try {
-          return req.resolve(
-            '@mudssky/shipit/examples/shipit.config.example.ts',
-          )
-        } catch {
-          return null
+  .option('-t, --template <name>', '选择模板名称（文件名或别名）')
+  .option('-l, --list', '列出可用模板')
+  .option('-i, --interactive', '启用交互式选择')
+  .option('-I, --no-interactive', '禁用交互式流程')
+  .option('-E, --examples-dir <dir>', '模板目录（默认自动探测）')
+  .action(
+    async (options: {
+      out?: string
+      template?: string
+      list?: boolean
+      interactive?: boolean
+      noInteractive?: boolean
+    }) => {
+      function resolveExampleDir(): string {
+        const fromOption =
+          (options as any).examplesDir || process.env.SHIPIT_EXAMPLES_DIR
+        if (fromOption) {
+          const abs = path.resolve(process.cwd(), String(fromOption))
+          const statOk = fs.existsSync(abs)
+            ? fs.statSync(abs).isDirectory() || fs.statSync(abs).isFile()
+            : false
+          if (!statOk) throw new Error(`模板目录不存在: ${abs}`)
+          return fs.statSync(abs).isFile() ? path.dirname(abs) : abs
         }
-      })()
-      const candidates = [
-        path.resolve(__dirname, '../../examples/shipit.config.example.ts'),
-        path.resolve(__dirname, '../../../examples/shipit.config.example.ts'),
-        candidate3,
-        path.resolve(
-          process.cwd(),
-          'node_modules',
-          '@mudssky',
-          'shipit',
-          'examples',
-          'shipit.config.example.ts',
-        ),
-        path.resolve(process.cwd(), 'examples', 'shipit.config.example.ts'),
-      ].filter(Boolean) as string[]
-      for (const p of candidates) {
-        if (fs.existsSync(p)) return p
+        const req = createRequire(__filename)
+        const resolvedExampleFile = (() => {
+          try {
+            return req.resolve(
+              '@mudssky/shipit/examples/shipit.config.example.ts',
+            )
+          } catch {
+            return null
+          }
+        })()
+        const candidates = [
+          // 项目源码内
+          path.resolve(__dirname, '../../examples/config'),
+          path.resolve(__dirname, '../../examples'),
+          path.resolve(__dirname, '../../../examples/config'),
+          path.resolve(__dirname, '../../../examples'),
+          // 包内
+          resolvedExampleFile
+            ? path.join(path.dirname(resolvedExampleFile), 'config')
+            : null,
+          resolvedExampleFile ? path.dirname(resolvedExampleFile) : null,
+          // 工作目录下的 node_modules 与本地 examples
+          path.resolve(
+            process.cwd(),
+            'node_modules',
+            '@mudssky',
+            'shipit',
+            'examples',
+            'config',
+          ),
+          path.resolve(
+            process.cwd(),
+            'node_modules',
+            '@mudssky',
+            'shipit',
+            'examples',
+          ),
+          path.resolve(process.cwd(), 'examples', 'config'),
+          path.resolve(process.cwd(), 'examples'),
+        ].filter(Boolean) as string[]
+        for (const dir of candidates) {
+          if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) return dir
+        }
+        throw new Error(`未找到示例目录，已尝试: ${candidates.join(' | ')}`)
       }
-      throw new Error(`未找到示例配置文件，已尝试: ${candidates.join(' | ')}`)
-    }
-    const examplePath = resolveExamplePath()
-    try {
-      const content = fs.readFileSync(examplePath, 'utf-8')
-      if (options?.out) {
-        const outPath = path.resolve(process.cwd(), options.out)
-        fs.mkdirSync(path.dirname(outPath), { recursive: true })
-        fs.writeFileSync(outPath, content, 'utf-8')
-        console.log(`已写入: ${outPath}`)
-      } else {
-        console.log(content)
+      function listTemplates(
+        dir: string,
+      ): Array<{ name: string; file: string }> {
+        const files = fs.readdirSync(dir)
+        const tplFiles = files
+          .filter((f) => /\.([jt]s)$/i.test(f))
+          .map((f) => ({
+            name: f.replace(/\.[jt]s$/i, ''),
+            file: path.join(dir, f),
+          }))
+        return tplFiles.sort((a, b) => a.name.localeCompare(b.name))
       }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
-      console.error(`读取示例配置失败: ${msg}`)
-      process.exitCode = 1
-    }
-  })
+      async function pickTemplate(
+        templates: Array<{ name: string; file: string }>,
+        nameInput?: string,
+        interactiveEnabled?: boolean,
+      ): Promise<string> {
+        const byName = (nm: string) =>
+          templates.find((t) => t.name === nm || path.basename(t.file) === nm)
+            ?.file
+        if (nameInput) {
+          const found = byName(String(nameInput))
+          if (found) return found
+        }
+        const defaultFile = templates.find((t) =>
+          /shipit\.config\.example\.[jt]s$/i.test(path.basename(t.file)),
+        )?.file
+        const autoInteractive = Boolean(process.stdout.isTTY && !process.env.CI)
+        const enableInteractive =
+          interactiveEnabled ??
+          (autoInteractive && !(options as any).noInteractive)
+        if (enableInteractive) {
+          const picked = await pickFromList(
+            templates,
+            (it) => ({ name: it.name, value: it }),
+            '请选择配置模板',
+          )
+          return (
+            (picked ? picked.file : undefined) ||
+            defaultFile ||
+            templates[0].file
+          )
+        }
+        return defaultFile || templates[0].file
+      }
+      const exampleDir = resolveExampleDir()
+      const templates = listTemplates(exampleDir)
+      if ((options as any).list) {
+        console.log('可用模板:')
+        for (const t of templates) {
+          console.log(`  - ${t.name} -> ${t.file}`)
+        }
+        return
+      }
+      const examplePath = await pickTemplate(
+        templates,
+        (options as any).template,
+        (options as any).interactive,
+      )
+      try {
+        const content = fs.readFileSync(examplePath, 'utf-8')
+        if (options?.out) {
+          const outPath = path.resolve(process.cwd(), options.out)
+          fs.mkdirSync(path.dirname(outPath), { recursive: true })
+          fs.writeFileSync(outPath, content, 'utf-8')
+          console.log(`已写入: ${outPath}`)
+        } else {
+          console.log(content)
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        console.error(`读取示例配置失败: ${msg}`)
+        process.exitCode = 1
+      }
+    },
+  )
