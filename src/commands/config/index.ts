@@ -101,23 +101,26 @@ cmd
       const req = createRequire(__filename)
       const candidate3 = (() => {
         try {
-          return req.resolve('@mudssky/shipit/shipit.config.example.ts')
+          return req.resolve(
+            '@mudssky/shipit/examples/shipit.config.example.ts',
+          )
         } catch {
           return null
         }
       })()
       const candidates = [
-        path.resolve(__dirname, '../shipit.config.example.ts'),
-        path.resolve(__dirname, '../../shipit.config.example.ts'),
-        path.resolve(__dirname, '../../../shipit.config.example.ts'),
+        path.resolve(__dirname, '../../examples/shipit.config.example.ts'),
+        path.resolve(__dirname, '../../../examples/shipit.config.example.ts'),
         candidate3,
         path.resolve(
           process.cwd(),
           'node_modules',
           '@mudssky',
           'shipit',
+          'examples',
           'shipit.config.example.ts',
         ),
+        path.resolve(process.cwd(), 'examples', 'shipit.config.example.ts'),
       ].filter(Boolean) as string[]
       for (const p of candidates) {
         if (fs.existsSync(p)) return p

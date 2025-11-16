@@ -31,7 +31,7 @@
 - 读取路径优先级：`SHIPIT_CONFIG_DIR` 环境变量 > 项目根目录（如 `c:\home\Projects\frontend\node\shipit`）> 当前工作目录
 
 ### 示例配置
-- 示例文件：`shipit.config.example.ts`（随 npm 包一同提供）
+- 示例文件：`examples/shipit.config.example.ts`（随 npm 包一同提供）
 - 使用方式：复制为 `shipit.config.ts` 后按需修改占位字段（AK/SK、Bucket、Server Token 等）
 - 安全建议：敏感信息优先使用环境变量或外部注入，避免提交到版本库
 

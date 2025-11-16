@@ -1,4 +1,4 @@
-import { defineConfig } from '@/config/shipit'
+import { defineConfig } from '@mudssky/shipit'
 
 export default defineConfig({
   artifact: {

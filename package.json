@@ -12,7 +12,7 @@
     "dist",
     "README.md",
     "LICENSE",
-    "shipit.config.example.ts"
+    "examples/shipit.config.example.ts"
   ],
   "publishConfig": {
     "access": "public",
