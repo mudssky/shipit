@@ -122,15 +122,17 @@ cmd
           return fs.statSync(abs).isFile() ? path.dirname(abs) : abs
         }
         const req = createRequire(__filename)
-        const resolvedExampleFile = (() => {
+        const pkgJsonPath = (() => {
           try {
-            return req.resolve(
-              '@mudssky/shipit/examples/shipit.config.example.ts',
-            )
+            return req.resolve('@mudssky/shipit/package.json')
           } catch {
             return null
           }
         })()
+        let pkgDir = pkgJsonPath ? path.dirname(pkgJsonPath) : null
+        if (!pkgDir) {
+          pkgDir = path.resolve(__dirname, '..')
+        }
         const candidates = [
           // 项目源码内
           path.resolve(__dirname, '../../examples/config'),
@@ -138,10 +140,8 @@ cmd
           path.resolve(__dirname, '../../../examples/config'),
           path.resolve(__dirname, '../../../examples'),
           // 包内
-          resolvedExampleFile
-            ? path.join(path.dirname(resolvedExampleFile), 'config')
-            : null,
-          resolvedExampleFile ? path.dirname(resolvedExampleFile) : null,
+          pkgDir ? path.join(pkgDir, 'examples', 'config') : null,
+          pkgDir ? path.join(pkgDir, 'examples') : null,
           // 工作目录下的 node_modules 与本地 examples
           path.resolve(
             process.cwd(),
