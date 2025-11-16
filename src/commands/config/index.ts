@@ -312,7 +312,7 @@ cmd
           ? path.resolve(process.cwd(), options.out)
           : undefined
         if (interactiveEnabled && !finalOut) {
-          const ext = /\.js$/i.test(examplePath) ? '.js' : '.ts'
+          const ext = path.extname(examplePath) || '.js'
           const def = path.resolve(process.cwd(), `shipit.config${ext}`)
           const picked = await inputText('请输入输出文件路径', def)
           finalOut = path.resolve(process.cwd(), String(picked || def))
