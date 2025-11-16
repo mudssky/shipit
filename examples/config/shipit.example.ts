@@ -13,7 +13,6 @@ export default defineConfig({
       region: 'cn-hangzhou',
       endpoint: 'https://oss-cn-hangzhou.aliyuncs.com',
       prefix: 'releases/',
-      requiredPrefix: 'releases/',
       accessKeyId: 'YOUR_AK',
       accessKeySecret: 'YOUR_SK',
     },

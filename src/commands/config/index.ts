@@ -183,6 +183,9 @@ cmd
         nameInput?: string,
         interactiveEnabled?: boolean,
       ): Promise<string> {
+        if (!Array.isArray(templates) || templates.length === 0) {
+          throw new Error('未找到任何模板文件（需为 .ts/.js）')
+        }
         const byName = (nm: string) =>
           templates.find((t) => t.name === nm || path.basename(t.file) === nm)
             ?.file
@@ -191,7 +194,7 @@ cmd
           if (found) return found
         }
         const defaultFile = templates.find((t) =>
-          /shipit\.config\.example\.[jt]s$/i.test(path.basename(t.file)),
+          /shipit(\.config)?\.example\.[jt]s$/i.test(path.basename(t.file)),
         )?.file
         const autoInteractive = Boolean(process.stdout.isTTY && !process.env.CI)
         const enableInteractive =
@@ -213,6 +216,11 @@ cmd
       }
       const exampleDir = resolveExampleDir()
       const templates = listTemplates(exampleDir)
+      if (!templates.length) {
+        console.error(`模板目录中未找到 .ts/.js 文件: ${exampleDir}`)
+        process.exitCode = 1
+        return
+      }
       if ((options as any).list) {
         console.log('可用模板:')
         for (const t of templates) {
