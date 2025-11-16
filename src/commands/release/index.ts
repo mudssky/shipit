@@ -127,9 +127,7 @@ release
               )
             }
             fs.mkdirSync(outputDir, { recursive: true })
-            const key = cfg.prefix
-              ? `${cfg.prefix}${String(picked.key)}`
-              : String(picked.key)
+            const key = String(picked.key)
             const filePath = path.join(
               outputDir,
               path.basename(String(picked.key)),
@@ -166,9 +164,7 @@ release
               )
               return
             }
-            const key = cfg.prefix
-              ? `${cfg.prefix}${String(picked.key)}`
-              : String(picked.key)
+            const key = String(picked.key)
             const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shipit-'))
             const tmpFile = path.join(tmpDir, path.basename(String(picked.key)))
             logger.start('正在发布')
