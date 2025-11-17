@@ -1,8 +1,7 @@
 import { defineConfig } from '@mudssky/shipit'
 
 export default defineConfig({
-  upload: {
-    defaultProvider: 'oss',
+  providers: {
     oss: {
       provider: 'aliyun',
       bucket: 'your-bucket',
@@ -14,11 +13,13 @@ export default defineConfig({
       accessKeySecret: 'YOUR_SK',
     },
     server: {
+      baseUrl: 'https://api.example.com',
       endpoint: 'https://api.example.com/upload',
       headers: { Authorization: 'Bearer YOUR_UPLOAD_TOKEN' },
       targetDir: '/var/www/releases',
     },
   },
+  upload: { defaultProvider: 'oss' },
   release: {
     defaultProvider: 'oss',
     targetDir: './releases',

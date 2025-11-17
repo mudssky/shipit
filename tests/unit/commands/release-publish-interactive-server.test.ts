@@ -21,7 +21,11 @@ vi.mock('@/providers/server', () => ({
 
 vi.mock('@/config/shipit', () => ({
   shipitConfig: {
-    upload: { oss: { prefix: 'releases/' } },
+    providers: {
+      oss: { prefix: 'releases/', provider: 'aliyun', bucket: 'b' },
+      server: { baseUrl: 'https://api.example.com' },
+    },
+    upload: { defaultProvider: 'oss' },
     release: {
       defaultProvider: 'server',
       targetDir: path.join(process.cwd(), 'tmp'),
@@ -39,7 +43,6 @@ vi.mock('@/config/shipit', () => ({
       afterRelease: [{ type: 'ts', value: './scripts/after.ts' }],
       shell: 'bash',
     },
-    server: { baseUrl: 'https://api.example.com' },
   },
 }))
 

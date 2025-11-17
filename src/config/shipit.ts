@@ -56,9 +56,6 @@ const ScpUploadSchema = z.object({
 
 const UploadSchema = z.object({
   defaultProvider: z.enum(['server', 'oss', 'scp']).default('oss'),
-  server: ServerUploadSchema.optional(),
-  oss: OssUploadSchema.optional(),
-  scp: ScpUploadSchema.optional(),
 })
 
 const ReleaseSchema = z.object({
@@ -71,9 +68,18 @@ const ReleaseSchema = z.object({
   keepZipOnPublish: z.boolean().optional(),
 })
 
-const ServerProviderSchema = z.object({
-  baseUrl: z.string(),
-  token: z.string().optional(),
+const ProvidersSchema = z.object({
+  oss: OssUploadSchema.optional(),
+  server: z
+    .object({
+      baseUrl: z.string(),
+      token: z.string().optional(),
+      endpoint: z.string(),
+      headers: z.record(z.string(), z.string()).optional(),
+      targetDir: z.string(),
+    })
+    .optional(),
+  scp: ScpUploadSchema.optional(),
 })
 
 const HookItemObjectSchema = z.object({
@@ -102,6 +108,7 @@ const ShipitConfigSchema = z.object({
     defaultPath: './dist/release.zip',
     nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
   })),
+  providers: ProvidersSchema.default(() => ({})),
   upload: UploadSchema.default(() => ({ defaultProvider: 'oss' as const })),
   release: ReleaseSchema.default(() => ({
     defaultProvider: 'oss' as const,
@@ -109,7 +116,6 @@ const ShipitConfigSchema = z.object({
     listLimit: 10,
     listLargeThreshold: 30,
   })),
-  server: ServerProviderSchema.optional(),
   hooks: HooksSchema.default(() => ({
     beforeUpload: [],
     afterUpload: [],

@@ -3,8 +3,7 @@ module.exports = {
     defaultPath: './dist/release.zip',
     nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
   },
-  upload: {
-    defaultProvider: 'oss',
+  providers: {
     oss: {
       provider: 'aliyun',
       bucket: 'your-bucket',
@@ -15,10 +14,15 @@ module.exports = {
       accessKeySecret: 'YOUR_SK',
     },
     server: {
+      baseUrl: 'https://api.example.com',
+      token: 'YOUR_SERVER_TOKEN',
       endpoint: 'https://api.example.com/upload',
       headers: { Authorization: 'Bearer YOUR_UPLOAD_TOKEN' },
       targetDir: '/var/www/releases',
     },
+  },
+  upload: {
+    defaultProvider: 'oss',
   },
   release: {
     defaultProvider: 'server',
@@ -42,9 +46,5 @@ module.exports = {
       { type: 'shell', value: 'echo ReleaseDone', shell: 'powershell' },
     ],
     shell: process.platform === 'win32' ? 'powershell' : 'bash',
-  },
-  server: {
-    baseUrl: 'https://api.example.com',
-    token: 'YOUR_SERVER_TOKEN',
   },
 }

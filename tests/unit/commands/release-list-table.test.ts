@@ -28,10 +28,10 @@ describe('release list 使用 console.table 展示', () => {
           defaultPath: './dist/release.zip',
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
         },
-        upload: {
-          defaultProvider: 'oss',
+        providers: {
           oss: { provider: 'aliyun', bucket: 'b', prefix: 'releases/' },
         },
+        upload: { defaultProvider: 'oss' },
         release: {
           defaultProvider: 'oss',
           targetDir: '.',

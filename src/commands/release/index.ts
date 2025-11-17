@@ -72,7 +72,7 @@ release
       const interactiveEnabled =
         options.interactive ?? (autoInteractive && !options.noInteractive)
       if (provider === 'oss') {
-        const cfg = shipitConfig.upload.oss
+        const cfg = shipitConfig.providers.oss
         if (!cfg) throw new ShipitError('缺少 oss 配置')
         logger.start('正在从 OSS 获取列表')
         const oss = createOssProvider(cfg)
@@ -270,7 +270,7 @@ release
         return
       }
       if (provider === 'server') {
-        const cfg = shipitConfig.server
+        const cfg = shipitConfig.providers.server
         if (!cfg) throw new ShipitError('缺少 server 配置')
         logger.start('正在从 Server 获取列表')
         const server = createServerProvider(cfg)
@@ -600,7 +600,7 @@ release
         return
       }
       if (provider === 'server') {
-        const cfg = shipitConfig.server
+        const cfg = shipitConfig.providers.server
         if (!cfg) throw new ShipitError('缺少 server 配置')
         const server = createServerProvider(cfg)
         await server.publish(path.basename(String(name)), targetDir)
@@ -608,7 +608,7 @@ release
           `发布成功: ${path.basename(String(name))} → ${targetDir}`,
         )
       } else {
-        const cfg = shipitConfig.upload.oss
+        const cfg = shipitConfig.providers.oss
         if (!cfg) throw new ShipitError('缺少 oss 配置')
         const key = cfg.prefix ? `${cfg.prefix}${String(name)}` : String(name)
         const keepZip = Boolean(
@@ -699,7 +699,7 @@ release
       if (provider !== 'oss') {
         throw new ShipitError(`未实现的下载 Provider: ${provider}`)
       }
-      const cfg = shipitConfig.upload.oss
+      const cfg = shipitConfig.providers.oss
       if (!cfg) throw new ShipitError('缺少 oss 配置')
       const autoInteractive = Boolean(process.stdout.isTTY && !process.env.CI)
       const interactiveEnabled = options.interactive ?? autoInteractive

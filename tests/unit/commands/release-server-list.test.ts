@@ -17,7 +17,11 @@ vi.mock('@/providers/server', () => {
 vi.mock('@/config/shipit', () => {
   return {
     shipitConfig: {
-      upload: { oss: { prefix: 'releases/' } },
+      providers: {
+        oss: { prefix: 'releases/', provider: 'aliyun', bucket: 'b' },
+        server: { baseUrl: 'https://api.example.com' },
+      },
+      upload: { defaultProvider: 'oss' },
       release: {
         defaultProvider: 'oss',
         targetDir: '.',
@@ -31,7 +35,6 @@ vi.mock('@/config/shipit', () => {
         afterRelease: [],
         shell: 'bash',
       },
-      server: { baseUrl: 'https://api.example.com' },
     },
   }
 })

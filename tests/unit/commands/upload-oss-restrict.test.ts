@@ -27,8 +27,7 @@ describe('upload 路径限制(requiredPrefix)', () => {
           defaultPath: f,
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
         },
-        upload: {
-          defaultProvider: 'oss',
+        providers: {
           oss: {
             provider: 'aliyun',
             bucket: 'b',
@@ -36,6 +35,7 @@ describe('upload 路径限制(requiredPrefix)', () => {
             requiredPrefix: 'test-shipit/',
           },
         },
+        upload: { defaultProvider: 'oss' },
         release: { defaultProvider: 'oss', targetDir: '.', listLimit: 10 },
         hooks: {
           beforeUpload: [],
@@ -62,8 +62,7 @@ describe('upload 路径限制(requiredPrefix)', () => {
           defaultPath: f,
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
         },
-        upload: {
-          defaultProvider: 'oss',
+        providers: {
           oss: {
             provider: 'aliyun',
             bucket: 'b',
@@ -71,6 +70,7 @@ describe('upload 路径限制(requiredPrefix)', () => {
             requiredPrefix: 'test-shipit/',
           },
         },
+        upload: { defaultProvider: 'oss' },
         release: { defaultProvider: 'oss', targetDir: '.', listLimit: 10 },
         hooks: {
           beforeUpload: [],

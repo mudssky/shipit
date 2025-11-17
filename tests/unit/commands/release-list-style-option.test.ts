@@ -24,10 +24,10 @@ describe('release list --style 选项覆盖输出模式', () => {
           defaultPath: './dist/release.zip',
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
         },
-        upload: {
-          defaultProvider: 'oss',
+        providers: {
           oss: { provider: 'aliyun', bucket: 'b', prefix: 'releases/' },
         },
+        upload: { defaultProvider: 'oss' },
         release: {
           defaultProvider: 'oss',
           targetDir: '.',

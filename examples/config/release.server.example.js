@@ -1,6 +1,5 @@
 module.exports = {
-  upload: {
-    defaultProvider: 'oss',
+  providers: {
     oss: {
       provider: 'aliyun',
       bucket: 'your-bucket',
@@ -12,6 +11,7 @@ module.exports = {
       accessKeySecret: 'YOUR_SK',
     },
   },
+  upload: { defaultProvider: 'oss' },
   release: {
     defaultProvider: 'oss',
     targetDir: './releases',

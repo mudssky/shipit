@@ -77,14 +77,14 @@ program
               provider,
               artifactName: name,
               filePath,
-              prefix: shipitConfig.upload.oss?.prefix ?? '',
+              prefix: shipitConfig.providers.oss?.prefix ?? '',
             },
             { logger, dryRun: Boolean(options.dryRun) },
           )
           if (shipitConfig.hooks.beforeUpload.length > 0) await p
         }
         if (options.dryRun) {
-          const key = `${shipitConfig.upload.oss?.prefix ?? ''}${name}`
+          const key = `${shipitConfig.providers.oss?.prefix ?? ''}${name}`
           logger.log('info', `dry-run: 上传到 OSS ${key}`)
         } else {
           await ossUpload({ filePath, name, logger })
@@ -96,7 +96,7 @@ program
               provider,
               artifactName: name,
               filePath,
-              prefix: shipitConfig.upload.oss?.prefix ?? '',
+              prefix: shipitConfig.providers.oss?.prefix ?? '',
             },
             { logger, dryRun: Boolean(options.dryRun) },
           )
@@ -133,7 +133,7 @@ async function serverUpload(args: {
   logger: Logger
 }): Promise<void> {
   const { filePath, name, logger } = args
-  const cfg = shipitConfig.upload.server
+  const cfg = shipitConfig.providers.server
   if (!cfg) throw new ShipitError('缺少 server 上传配置')
   logger.start('正在上传到服务器')
   const form = new FormData()
@@ -156,7 +156,7 @@ async function ossUpload(args: {
   logger: Logger
 }): Promise<void> {
   const { filePath, name, logger } = args
-  const cfg = shipitConfig.upload.oss
+  const cfg = shipitConfig.providers.oss
   if (!cfg) throw new ShipitError('缺少 oss 上传配置')
   if (name.includes('/') || name.includes('\\') || name.includes('..')) {
     throw new ShipitError('非法名称: 不允许包含路径分隔符或..')

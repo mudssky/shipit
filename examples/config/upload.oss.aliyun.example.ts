@@ -5,8 +5,7 @@ export default defineConfig({
     defaultPath: './dist/release.zip',
     nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
   },
-  upload: {
-    defaultProvider: 'oss',
+  providers: {
     oss: {
       provider: 'aliyun',
       bucket: 'your-bucket',
@@ -17,4 +16,5 @@ export default defineConfig({
       accessKeySecret: 'YOUR_SK',
     },
   },
+  upload: { defaultProvider: 'oss' },
 })

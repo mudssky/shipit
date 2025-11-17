@@ -22,10 +22,10 @@ vi.mock('@/config/shipit', () => ({
       defaultPath: './dist/release.zip',
       nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
     },
-    upload: {
-      defaultProvider: 'oss',
+    providers: {
       oss: { provider: 'aliyun', bucket: 'b', prefix: 'releases/' },
     },
+    upload: { defaultProvider: 'oss' },
     release: { defaultProvider: 'oss', targetDir: '.', listLimit: 10 },
     hooks: {
       beforeUpload: [],
