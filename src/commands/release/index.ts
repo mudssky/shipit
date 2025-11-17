@@ -127,20 +127,26 @@ release
               options.output || shipitConfig.release.targetDir || '.',
             )
             const allowed = shipitConfig.release.allowedTargetDirPrefix
+            const resolvedOutputDir = resolveUserPath(outputDir)
+            const resolvedAllowed = allowed
+              ? resolveUserPath(String(allowed))
+              : undefined
             if (
-              allowed &&
-              !normalizePath(outputDir).startsWith(normalizePath(allowed))
+              resolvedAllowed &&
+              !normalizePath(resolvedOutputDir).startsWith(
+                normalizePath(resolvedAllowed),
+              )
             ) {
               throw new ShipitError(
-                `下载目录不合法: 需以 ${allowed} 开头，当前为 ${outputDir}`,
+                `下载目录不合法: 需以 ${allowed} 开头，当前为 ${resolvedOutputDir}`,
               )
             }
-            if (!fs.existsSync(outputDir)) {
-              fs.mkdirSync(outputDir, { recursive: true })
+            if (!fs.existsSync(resolvedOutputDir)) {
+              fs.mkdirSync(resolvedOutputDir, { recursive: true })
             }
             const key = String(picked.key)
             const filePath = path.join(
-              outputDir,
+              resolvedOutputDir,
               path.basename(String(picked.key)),
             )
             logger.start(`正在下载 ${key}`)
@@ -588,24 +594,33 @@ release
         })
         finalOutputDir = dirInput
       }
+      const resolvedFinalOutputDir = resolveUserPath(finalOutputDir)
+      const resolvedAllowed = allowed
+        ? resolveUserPath(String(allowed))
+        : undefined
       if (
-        allowed &&
-        !normalizePath(finalOutputDir).startsWith(normalizePath(allowed))
+        resolvedAllowed &&
+        !normalizePath(resolvedFinalOutputDir).startsWith(
+          normalizePath(resolvedAllowed),
+        )
       ) {
         throw new ShipitError(
-          `下载目录不合法: 需以 ${allowed} 开头，当前为 ${finalOutputDir}`,
+          `下载目录不合法: 需以 ${allowed} 开头，当前为 ${resolvedFinalOutputDir}`,
         )
       }
-      if (!fs.existsSync(finalOutputDir)) {
-        fs.mkdirSync(finalOutputDir, { recursive: true })
+      if (!fs.existsSync(resolvedFinalOutputDir)) {
+        fs.mkdirSync(resolvedFinalOutputDir, { recursive: true })
       }
       const key = cfg.prefix ? `${cfg.prefix}${String(name)}` : String(name)
-      const filePath = path.join(finalOutputDir, path.basename(String(name)))
+      const filePath = path.join(
+        resolvedFinalOutputDir,
+        path.basename(String(name)),
+      )
       if (interactiveEnabled) {
         const ok = options.yes
           ? true
           : await confirm(
-              `确认下载 ${path.basename(String(name))} 到 ${finalOutputDir}？`,
+              `确认下载 ${path.basename(String(name))} 到 ${resolvedFinalOutputDir}？`,
               true,
             )
         if (!ok) {
@@ -640,6 +655,24 @@ async function readGlobalTableStyle(): Promise<'tsv' | 'table' | undefined> {
   } catch {
     return undefined
   }
+}
+
+function resolveUserPath(p: string): string {
+  const s = String(p || '')
+  const home = os.homedir()
+  let out = s
+  if (out === '~') {
+    out = home
+  } else if (out.startsWith('~/') || out.startsWith('~\\')) {
+    out = path.join(home, out.slice(2))
+  }
+  out = out.replace(/%([^%]+)%/g, (_, k) =>
+    String(process.env[String(k)] || `%${String(k)}%`),
+  )
+  out = out.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, k) =>
+    String(process.env[String(k)] || `$${String(k)}`),
+  )
+  return path.resolve(out)
 }
 
 async function unzipFile(zipPath: string, destDir: string): Promise<void> {
