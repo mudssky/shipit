@@ -22,7 +22,7 @@
     "prepare": "husky",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "prebuild": "pnpm typecheck && pnpm biome:check && pnpm test",
+    "prebuild": "pnpm qa:slow",
     "build": "rspack build && pnpm build:types",
     "build:types": "tsc --emitDeclarationOnly -p tsconfig.json",
     "build:watch": "rspack build -w",
@@ -33,6 +33,7 @@
     "biome:check": "biome check .",
     "biome:ci": "biome ci .",
     "qa": "pnpm typecheck:fast && pnpm biome:fixAll && pnpm test",
+    "qa:slow": "pnpm typecheck && pnpm biome:fixAll && pnpm test",
     "test": "vitest run",
     "test:watch": "vitest"
   },

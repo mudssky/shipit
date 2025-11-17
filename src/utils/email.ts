@@ -1,4 +1,5 @@
 import { ImapFlow } from 'imapflow'
+import { ShipitError } from '@/utils/errors'
 import { globalConfig } from '../config'
 
 class ImapClientSingleton {
@@ -8,13 +9,20 @@ class ImapClientSingleton {
 
   public static getInstance(): ImapFlow {
     if (!ImapClientSingleton.instance) {
+      const host = globalConfig.DING_IMAP_HOST
+      const port = globalConfig.DING_IMAP_PORT
+      const user = globalConfig.DING_IMAP_USER
+      const pass = globalConfig.DING_IMAP_PASS
+      if (!host || !port || !user || !pass) {
+        throw new ShipitError('缺少钉邮 IMAP 配置')
+      }
       ImapClientSingleton.instance = new ImapFlow({
-        host: globalConfig.DING_IMAP_HOST,
-        port: globalConfig.DING_IMAP_PORT,
+        host,
+        port,
         secure: true,
         auth: {
-          user: globalConfig.DING_IMAP_USER,
-          pass: globalConfig.DING_IMAP_PASS,
+          user,
+          pass,
         },
         // logger: console, // 可以根据需要启用日志
         logger: false,

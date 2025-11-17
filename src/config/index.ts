@@ -5,11 +5,11 @@ import packageJson from '../../package.json'
 
 // Define Zod schema for GlobalEnvConfig
 const GlobalEnvConfigSchema = z.object({
-  DING_IMAP_HOST: z.string(),
-  DING_IMAP_PORT: z.number(),
-  DING_IMAP_USER: z.string(),
-  DING_IMAP_PASS: z.string(),
-  SHOW_MAIL_NUMBER: z.number(),
+  DING_IMAP_HOST: z.string().optional(),
+  DING_IMAP_PORT: z.number().optional(),
+  DING_IMAP_USER: z.string().optional(),
+  DING_IMAP_PASS: z.string().optional(),
+  SHOW_MAIL_NUMBER: z.number().optional(),
   TABLE_STYLE: z.enum(['tsv', 'table']).optional(),
   gitlabProjects: z
     .array(

@@ -49,6 +49,8 @@ release
   )
   .option('-i, --interactive', '启用交互式选择与确认')
   .option('-I, --no-interactive', '禁用交互式流程')
+  .option('-H, --no-hooks', '禁用配置中的 Hooks 执行')
+  .option('--keep-zip', '发布时保留 ZIP 文件')
   .option('-D, --dry-run', '演练模式，仅打印将执行的操作')
   .option('-y, --yes', '自动确认交互中的提示')
   .addHelpText(
@@ -161,6 +163,7 @@ release
             return
           }
           if (act === 'publish') {
+            const enableHooks = options.hooks !== false
             let targetDir = String(
               options.dir || shipitConfig.release.targetDir,
             )
@@ -182,8 +185,13 @@ release
               return
             }
             const key = String(picked.key)
+            const keepZip = Boolean(
+              options.keepZip || shipitConfig.release.keepZipOnPublish,
+            )
             const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shipit-'))
-            const tmpFile = path.join(tmpDir, path.basename(String(picked.key)))
+            const dlFile = keepZip
+              ? path.join(targetDir, path.basename(String(picked.key)))
+              : path.join(tmpDir, path.basename(String(picked.key)))
             if (interactiveEnabled) {
               const dirInput = await inputDir(targetDir, (v) => {
                 const ok =
@@ -210,18 +218,52 @@ release
             if (!fs.existsSync(targetDir)) {
               fs.mkdirSync(targetDir, { recursive: true })
             }
+            if (enableHooks) {
+              await runHooks(
+                'beforeRelease',
+                {
+                  provider: 'oss',
+                  targetDir,
+                  artifactName: path.basename(String(picked.key)),
+                },
+                {
+                  logger,
+                  dryRun: Boolean(options.dryRun),
+                  streamOutput: Boolean(
+                    options.verbose || program.opts().verbose,
+                  ),
+                },
+              )
+            }
             logger.start('正在发布')
-            const res = await createOssProvider(cfg).download(key, tmpFile)
+            const res = await createOssProvider(cfg).download(key, dlFile)
             if (!res?.bytes || res.bytes <= 0) {
               throw new ShipitError('下载失败或内容为空')
             }
-            await unzipFile(tmpFile, targetDir)
+            await unzipFile(dlFile, targetDir)
             try {
-              fs.unlinkSync(tmpFile)
+              if (!keepZip) fs.unlinkSync(dlFile)
             } catch {}
             logger.succeed(
               `发布成功: ${path.basename(String(picked.key))} → ${targetDir}`,
             )
+            if (enableHooks) {
+              await runHooks(
+                'afterRelease',
+                {
+                  provider: 'oss',
+                  targetDir,
+                  artifactName: path.basename(String(picked.key)),
+                },
+                {
+                  logger,
+                  dryRun: Boolean(options.dryRun),
+                  streamOutput: Boolean(
+                    options.verbose || program.opts().verbose,
+                  ),
+                },
+              )
+            }
             return
           }
         }
@@ -280,6 +322,7 @@ release
             return
           }
           if (act === 'publish') {
+            const enableHooks = options.hooks !== false
             const targetDir = String(
               options.dir || shipitConfig.release.targetDir,
             )
@@ -312,11 +355,45 @@ release
               )
               return
             }
+            if (enableHooks) {
+              await runHooks(
+                'beforeRelease',
+                {
+                  provider: 'server',
+                  targetDir,
+                  artifactName: path.basename(String(picked.key)),
+                },
+                {
+                  logger,
+                  dryRun: Boolean(options.dryRun),
+                  streamOutput: Boolean(
+                    options.verbose || program.opts().verbose,
+                  ),
+                },
+              )
+            }
             const svc = createServerProvider(cfg)
             await svc.publish(path.basename(String(picked.key)), targetDir)
             logger.succeed(
               `发布成功: ${path.basename(String(picked.key))} → ${targetDir}`,
             )
+            if (enableHooks) {
+              await runHooks(
+                'afterRelease',
+                {
+                  provider: 'server',
+                  targetDir,
+                  artifactName: path.basename(String(picked.key)),
+                },
+                {
+                  logger,
+                  dryRun: Boolean(options.dryRun),
+                  streamOutput: Boolean(
+                    options.verbose || program.opts().verbose,
+                  ),
+                },
+              )
+            }
             return
           }
         }
@@ -343,6 +420,7 @@ release
     `发布目标目录，默认 ${String(shipitConfig.release.targetDir)}`,
   )
   .option('-H, --no-hooks', '禁用配置中的 Hooks 执行')
+  .option('--keep-zip', '发布时保留 ZIP 文件')
   .option('-D, --dry-run', '演练模式，仅打印将执行的操作')
   .option('-i, --interactive', '启用交互式选择与确认')
   .option('-I, --no-interactive', '禁用交互式流程')
@@ -533,19 +611,24 @@ release
         const cfg = shipitConfig.upload.oss
         if (!cfg) throw new ShipitError('缺少 oss 配置')
         const key = cfg.prefix ? `${cfg.prefix}${String(name)}` : String(name)
+        const keepZip = Boolean(
+          (options as any).keepZip || shipitConfig.release.keepZipOnPublish,
+        )
         const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shipit-'))
-        const tmpFile = path.join(tmpDir, path.basename(String(name)))
+        const dlFile = keepZip
+          ? path.join(targetDir, path.basename(String(name)))
+          : path.join(tmpDir, path.basename(String(name)))
         const oss = createOssProvider(cfg)
         if (!fs.existsSync(targetDir)) {
           fs.mkdirSync(targetDir, { recursive: true })
         }
-        const res = await oss.download(key, tmpFile)
+        const res = await oss.download(key, dlFile)
         if (!res?.bytes || res.bytes <= 0) {
           throw new ShipitError('下载失败或内容为空')
         }
-        await unzipFile(tmpFile, targetDir)
+        await unzipFile(dlFile, targetDir)
         try {
-          fs.unlinkSync(tmpFile)
+          if (!keepZip) fs.unlinkSync(dlFile)
         } catch {}
         logger.succeed(
           `发布成功: ${path.basename(String(name))} → ${targetDir}`,

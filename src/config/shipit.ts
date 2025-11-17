@@ -68,6 +68,7 @@ const ReleaseSchema = z.object({
   allowedTargetDirPrefix: z.string().optional(),
   listOutputStyle: z.enum(['tsv', 'table']).optional(),
   listLargeThreshold: z.number().default(30),
+  keepZipOnPublish: z.boolean().optional(),
 })
 
 const ServerProviderSchema = z.object({
