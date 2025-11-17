@@ -27,6 +27,7 @@ type RunOptions = {
   shell?: 'bash' | 'powershell'
   logger: Logger
   dryRun?: boolean
+  streamOutput?: boolean
 }
 
 function normalizePath(p: string): string {
@@ -50,13 +51,20 @@ async function runShell(
   cwd: string,
   env: NodeJS.ProcessEnv,
   timeoutMs?: number,
+  streamOutput?: boolean,
 ): Promise<void> {
   if (sh === 'powershell') {
     const { execa } = await import('execa')
     const res = await execa(
       'powershell.exe',
       ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', cmd],
-      { cwd, env, timeout: timeoutMs, buffer: true },
+      {
+        cwd,
+        env,
+        timeout: timeoutMs,
+        buffer: !streamOutput,
+        stdio: streamOutput ? 'inherit' : undefined,
+      },
     )
     if (res.exitCode && res.exitCode !== 0)
       throw new ShipitError('HookExitError')
@@ -67,7 +75,8 @@ async function runShell(
     cwd,
     env,
     timeout: timeoutMs,
-    buffer: true,
+    buffer: !streamOutput,
+    stdio: streamOutput ? 'inherit' : undefined,
   })
   if (res.exitCode && res.exitCode !== 0) throw new ShipitError('HookExitError')
 }
@@ -136,7 +145,7 @@ export async function runHooks(
     if (t === 'shell') {
       const sh = isObjectHook(item) && obj.shell ? obj.shell! : shellDefault
       logger.start(`执行Hook: ${val}`)
-      await runShell(val, sh, workingDir, env, timeoutMs)
+      await runShell(val, sh, workingDir, env, timeoutMs, options.streamOutput)
       logger.succeed(`Hook完成: ${val}`)
       continue
     }

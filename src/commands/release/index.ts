@@ -495,7 +495,11 @@ release
         await runHooks(
           'beforeRelease',
           { provider, targetDir, artifactName: String(name) },
-          { logger, dryRun: Boolean(options.dryRun) },
+          {
+            logger,
+            dryRun: Boolean(options.dryRun),
+            streamOutput: Boolean(options.verbose || program.opts().verbose),
+          },
         )
         if (sumBefore.total > 0)
           logger.log(
@@ -565,7 +569,11 @@ release
         await runHooks(
           'afterRelease',
           { provider, targetDir, artifactName: String(name) },
-          { logger, dryRun: Boolean(options.dryRun) },
+          {
+            logger,
+            dryRun: Boolean(options.dryRun),
+            streamOutput: Boolean(options.verbose || program.opts().verbose),
+          },
         )
         if (sumAfter.total > 0)
           logger.log(
