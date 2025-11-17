@@ -449,12 +449,60 @@ release
       }
       logger.start('正在发布')
       const enableHooks = options.hooks !== false
-      if (enableHooks)
+      const hooksCfg = shipitConfig.hooks as any
+      const summarize = (
+        stage: 'beforeRelease' | 'afterRelease',
+      ): {
+        total: number
+        shell: number
+        js: number
+        ts: number
+        names: string[]
+      } => {
+        const arr = (hooksCfg as any)[stage] as any[]
+        const names = arr.map((x) =>
+          typeof x === 'string' ? x : String(x.value),
+        )
+        const shell = arr.filter((x) =>
+          typeof x === 'string'
+            ? !(x.endsWith('.ts') || x.endsWith('.js'))
+            : (x.type ?? '') === 'shell',
+        ).length
+        const js = arr.filter((x) =>
+          typeof x === 'string' ? x.endsWith('.js') : (x.type ?? '') === 'js',
+        ).length
+        const ts = arr.filter((x) =>
+          typeof x === 'string' ? x.endsWith('.ts') : (x.type ?? '') === 'ts',
+        ).length
+        return { total: arr.length, shell, js, ts, names }
+      }
+      const sumBefore = summarize('beforeRelease')
+      if (!enableHooks) {
+        logger.log('info', 'hooks: disabled')
+        logger.log('info', '跳过 beforeRelease（已禁用）')
+      } else {
+        if (sumBefore.total === 0) {
+          logger.log('info', '未配置 Hooks：跳过 beforeRelease')
+        } else {
+          logger.log(
+            'info',
+            `准备执行 beforeRelease Hooks：shell ${sumBefore.shell}, js ${sumBefore.js}, ts ${sumBefore.ts}`,
+          )
+          if (verbose) {
+            logger.log('info', `详细：${sumBefore.names.join(', ')}`)
+          }
+        }
         await runHooks(
           'beforeRelease',
           { provider, targetDir, artifactName: String(name) },
           { logger, dryRun: Boolean(options.dryRun) },
         )
+        if (sumBefore.total > 0)
+          logger.log(
+            'info',
+            `beforeRelease Hooks 执行完成（共 ${sumBefore.total} 条）`,
+          )
+      }
       if (!name) {
         logger.fail('未指定发布产物名称')
         throw new ShipitError('缺少发布名称')
@@ -499,12 +547,32 @@ release
           `发布成功: ${path.basename(String(name))} → ${targetDir}`,
         )
       }
-      if (enableHooks)
+      const sumAfter = summarize('afterRelease')
+      if (!enableHooks) {
+        logger.log('info', '跳过 afterRelease（已禁用）')
+      } else {
+        if (sumAfter.total === 0) {
+          logger.log('info', '未配置 Hooks：跳过 afterRelease')
+        } else {
+          logger.log(
+            'info',
+            `准备执行 afterRelease Hooks：shell ${sumAfter.shell}, js ${sumAfter.js}, ts ${sumAfter.ts}`,
+          )
+          if (verbose) {
+            logger.log('info', `详细：${sumAfter.names.join(', ')}`)
+          }
+        }
         await runHooks(
           'afterRelease',
           { provider, targetDir, artifactName: String(name) },
           { logger, dryRun: Boolean(options.dryRun) },
         )
+        if (sumAfter.total > 0)
+          logger.log(
+            'info',
+            `afterRelease Hooks 执行完成（共 ${sumAfter.total} 条）`,
+          )
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       logger.fail(`发布失败: ${msg}`)
