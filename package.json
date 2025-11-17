@@ -1,6 +1,6 @@
 {
   "name": "@mudssky/shipit",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "",
   "bin": {
     "shipit": "dist/index.js"
