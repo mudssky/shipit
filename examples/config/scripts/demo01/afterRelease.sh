@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-DEPLOY_PROJECT_DIR="${HOME}/Projects/practice/official-website-v2"
+DEPLOY_PROJECT_DIR="/data/projects/official-website-v2-master"
 echo "Deploy project in ${DEPLOY_PROJECT_DIR}"
 if [ ! -d "${DEPLOY_PROJECT_DIR}" ]; then
   echo "Target directory not found: ${DEPLOY_PROJECT_DIR}"
