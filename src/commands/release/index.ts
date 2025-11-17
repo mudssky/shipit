@@ -135,7 +135,9 @@ release
                 `下载目录不合法: 需以 ${allowed} 开头，当前为 ${outputDir}`,
               )
             }
-            fs.mkdirSync(outputDir, { recursive: true })
+            if (!fs.existsSync(outputDir)) {
+              fs.mkdirSync(outputDir, { recursive: true })
+            }
             const key = String(picked.key)
             const filePath = path.join(
               outputDir,
@@ -189,7 +191,9 @@ release
               const ok = options.yes
                 ? true
                 : await confirm(
-                    `确认发布 ${path.basename(String(picked.key))} 到 ${targetDir}？`,
+                    `确认发布 ${path.basename(
+                      String(picked.key),
+                    )} 到 ${targetDir}？`,
                     true,
                   )
               if (!ok) {
@@ -285,7 +289,9 @@ release
             const ok = options.yes
               ? true
               : await confirm(
-                  `确认发布 ${path.basename(String(picked.key))} 到 ${targetDir}？`,
+                  `确认发布 ${path.basename(
+                    String(picked.key),
+                  )} 到 ${targetDir}？`,
                   true,
                 )
             if (!ok) {
