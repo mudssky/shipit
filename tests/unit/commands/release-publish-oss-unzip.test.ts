@@ -17,8 +17,8 @@ vi.mock('@/providers/oss', () => ({
   })),
 }))
 
-vi.mock('@/config/shipit', () => ({
-  shipitConfig: {
+vi.mock('@/config/shipit', () => {
+  const shipitConfig = {
     artifact: {
       defaultPath: './dist/release.zip',
       nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -35,8 +35,9 @@ vi.mock('@/config/shipit', () => ({
       afterRelease: [],
       shell: 'powershell',
     },
-  },
-}))
+  }
+  return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+})
 
 describe('release publish oss 解压', () => {
   it('下载后调用平台解压命令并输出成功', async () => {

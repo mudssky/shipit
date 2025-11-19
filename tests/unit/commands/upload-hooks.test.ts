@@ -16,8 +16,8 @@ vi.mock('@/providers/oss', () => {
   }
 })
 
-vi.mock('@/config/shipit', () => ({
-  shipitConfig: {
+vi.mock('@/config/shipit', () => {
+  const shipitConfig = {
     artifact: {
       defaultPath: './dist/release.zip',
       nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -34,8 +34,9 @@ vi.mock('@/config/shipit', () => ({
       afterRelease: [],
       shell: 'powershell',
     },
-  },
-}))
+  }
+  return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+})
 
 describe('upload hooks 执行', () => {
   it('默认执行 before/afterUpload', async () => {

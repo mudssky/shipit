@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/config/shipit', () => ({
-  shipitConfig: {
+vi.mock('@/config/shipit', () => {
+  const shipitConfig = {
     artifact: {
       defaultPath: './dist/release.zip',
       nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -24,8 +24,9 @@ vi.mock('@/config/shipit', () => ({
       afterRelease: [],
       shell: 'powershell',
     },
-  },
-}))
+  }
+  return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+})
 
 describe('子命令帮助输出', () => {
   it('upload 帮助包含关键描述与示例', async () => {

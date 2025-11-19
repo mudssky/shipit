@@ -12,8 +12,8 @@ describe('release publish 目录白名单', () => {
     const allowed = fs.mkdtempSync(path.join(os.tmpdir(), 'shipit-allowed-'))
     const disallowed = fs.mkdtempSync(path.join(os.tmpdir(), 'shipit-bad-'))
     const { program } = await import('@/cli')
-    vi.doMock('@/config/shipit', () => ({
-      shipitConfig: {
+    vi.doMock('@/config/shipit', () => {
+      const shipitConfig = {
         artifact: {
           defaultPath: './dist/release.zip',
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -35,8 +35,9 @@ describe('release publish 目录白名单', () => {
           afterRelease: [],
           shell: 'powershell',
         },
-      },
-    }))
+      }
+      return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+    })
     await import('@/commands/release')
     const spyErr = vi.spyOn(console, 'error').mockImplementation(() => {})
     const prevExit = process.exitCode
@@ -63,8 +64,8 @@ describe('release publish 目录白名单', () => {
     const target = path.join(allowed, 'sub')
     fs.mkdirSync(target)
     const { program } = await import('@/cli')
-    vi.doMock('@/config/shipit', () => ({
-      shipitConfig: {
+    vi.doMock('@/config/shipit', () => {
+      const shipitConfig = {
         artifact: {
           defaultPath: './dist/release.zip',
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -86,8 +87,9 @@ describe('release publish 目录白名单', () => {
           afterRelease: [],
           shell: 'powershell',
         },
-      },
-    }))
+      }
+      return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+    })
     await import('@/commands/release')
     const spyLog = vi.spyOn(console, 'log').mockImplementation(() => {})
     await (program as any).parseAsync([

@@ -8,6 +8,7 @@ program
   .description('一个用于发布前端项目的CLI工具')
   .version(packageJson.version)
   .option('-v, --verbose', '输出详细日志信息')
+  .option('--project <name>', '选择当前项目')
   .showHelpAfterError()
   .showSuggestionAfterError()
   .helpOption('-h, --help', '显示帮助信息')

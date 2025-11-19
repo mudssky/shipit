@@ -19,8 +19,8 @@ vi.mock('@/providers/server', () => ({
   createServerProvider: () => ({ publish }),
 }))
 
-vi.mock('@/config/shipit', () => ({
-  shipitConfig: {
+vi.mock('@/config/shipit', () => {
+  const shipitConfig = {
     providers: {
       oss: { prefix: 'releases/', provider: 'aliyun', bucket: 'b' },
       server: { baseUrl: 'https://api.example.com' },
@@ -43,8 +43,9 @@ vi.mock('@/config/shipit', () => ({
       afterRelease: [{ type: 'ts', value: './scripts/after.ts' }],
       shell: 'bash',
     },
-  },
-}))
+  }
+  return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+})
 
 import '@/commands/release/index.ts'
 import { program } from '@/cli'

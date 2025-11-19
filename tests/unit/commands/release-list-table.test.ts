@@ -22,8 +22,8 @@ describe('release list 使用 console.table 展示', () => {
 
   it('调用 console.table 输出 Key 与 LastModified', async () => {
     const { program } = await import('@/cli')
-    vi.doMock('@/config/shipit', () => ({
-      shipitConfig: {
+    vi.doMock('@/config/shipit', () => {
+      const shipitConfig = {
         artifact: {
           defaultPath: './dist/release.zip',
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -45,8 +45,9 @@ describe('release list 使用 console.table 展示', () => {
           afterRelease: [],
           shell: 'powershell',
         },
-      },
-    }))
+      }
+      return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+    })
     await import('@/commands/release')
     const spyTable = vi.spyOn(console, 'table').mockImplementation(() => {})
     await (program as any).parseAsync([

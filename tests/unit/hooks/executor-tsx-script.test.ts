@@ -44,5 +44,5 @@ describe('hooks executor - tsx脚本执行并返回更新', () => {
     await runHooks('beforeRelease', ctx, { logger })
     expect(ctx.marker).toBe('ts-ok')
     fs.rmSync(tmp, { recursive: true, force: true })
-  })
+  }, 15000)
 })

@@ -13,28 +13,27 @@ vi.mock('@/providers/server', () => {
 })
 
 vi.mock('@/config/shipit', () => {
-  return {
-    shipitConfig: {
-      providers: {
-        oss: { prefix: 'releases/', provider: 'aliyun', bucket: 'b' },
-        server: { baseUrl: 'https://api.example.com' },
-      },
-      upload: { defaultProvider: 'oss' },
-      release: {
-        defaultProvider: 'server',
-        targetDir: path.join(process.cwd(), 'tmp'),
-        listLimit: 10,
-        listOutputStyle: 'tsv',
-      },
-      hooks: {
-        beforeUpload: [],
-        afterUpload: [],
-        beforeRelease: [],
-        afterRelease: [],
-        shell: 'bash',
-      },
+  const shipitConfig = {
+    providers: {
+      oss: { prefix: 'releases/', provider: 'aliyun', bucket: 'b' },
+      server: { baseUrl: 'https://api.example.com' },
+    },
+    upload: { defaultProvider: 'oss' },
+    release: {
+      defaultProvider: 'server',
+      targetDir: path.join(process.cwd(), 'tmp'),
+      listLimit: 10,
+      listOutputStyle: 'tsv',
+    },
+    hooks: {
+      beforeUpload: [],
+      afterUpload: [],
+      beforeRelease: [],
+      afterRelease: [],
+      shell: 'bash',
     },
   }
+  return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
 })
 
 describe('release publish with server provider', () => {

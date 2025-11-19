@@ -12,8 +12,8 @@ vi.mock('@/providers/oss', () => {
   }
 })
 
-vi.mock('@/config/shipit', () => ({
-  shipitConfig: {
+vi.mock('@/config/shipit', () => {
+  const shipitConfig = {
     artifact: {
       defaultPath: './dist/release.zip',
       nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -30,8 +30,9 @@ vi.mock('@/config/shipit', () => ({
       afterRelease: [],
       shell: 'powershell',
     },
-  },
-}))
+  }
+  return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+})
 
 describe('upload 默认命名策略', () => {
   it('未传 -n 时使用模板生成名称', async () => {

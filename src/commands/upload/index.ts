@@ -4,7 +4,7 @@ import FormData from 'form-data'
 import fs from 'fs'
 import path from 'path'
 import { program } from '@/cli'
-import { shipitConfig } from '@/config/shipit'
+import { getEffectiveShipitConfig, shipitConfig } from '@/config/shipit'
 import { runHooks } from '@/hooks/executor'
 import { createOssProvider } from '@/providers/oss'
 import { exitWithError, ShipitError } from '@/utils/errors'
@@ -37,10 +37,10 @@ program
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)
     try {
-      const provider = options.provider || shipitConfig.upload.defaultProvider
-      const filePath = file || shipitConfig.artifact.defaultPath
-      const name =
-        options.name || formatName(shipitConfig.artifact.nameTemplate)
+      const eff = getEffectiveShipitConfig(String(program.opts().project || ''))
+      const provider = options.provider || eff.upload.defaultProvider
+      const filePath = file || eff.artifact.defaultPath
+      const name = options.name || formatName(eff.artifact.nameTemplate)
       const enableHooks = options.hooks !== false
       if (!fs.existsSync(filePath)) {
         throw new ShipitError(`文件不存在: ${filePath}`)
@@ -77,14 +77,14 @@ program
               provider,
               artifactName: name,
               filePath,
-              prefix: shipitConfig.providers.oss?.prefix ?? '',
+              prefix: eff.providers.oss?.prefix ?? '',
             },
             { logger, dryRun: Boolean(options.dryRun) },
           )
           if (shipitConfig.hooks.beforeUpload.length > 0) await p
         }
         if (options.dryRun) {
-          const key = `${shipitConfig.providers.oss?.prefix ?? ''}${name}`
+          const key = `${eff.providers.oss?.prefix ?? ''}${name}`
           logger.log('info', `dry-run: 上传到 OSS ${key}`)
         } else {
           await ossUpload({ filePath, name, logger })
@@ -96,7 +96,7 @@ program
               provider,
               artifactName: name,
               filePath,
-              prefix: shipitConfig.providers.oss?.prefix ?? '',
+              prefix: eff.providers.oss?.prefix ?? '',
             },
             { logger, dryRun: Boolean(options.dryRun) },
           )
@@ -127,13 +127,16 @@ function resolveHeaders(
   return out
 }
 
+// 使用配置层的单点实现：getEffectiveShipitConfig
+
 async function serverUpload(args: {
   filePath: string
   name: string
   logger: Logger
 }): Promise<void> {
   const { filePath, name, logger } = args
-  const cfg = shipitConfig.providers.server
+  const cfg = getEffectiveShipitConfig(String(program.opts().project || ''))
+    .providers.server
   if (!cfg) throw new ShipitError('缺少 server 上传配置')
   logger.start('正在上传到服务器')
   const form = new FormData()
@@ -156,7 +159,8 @@ async function ossUpload(args: {
   logger: Logger
 }): Promise<void> {
   const { filePath, name, logger } = args
-  const cfg = shipitConfig.providers.oss
+  const cfg = getEffectiveShipitConfig(String(program.opts().project || ''))
+    .providers.oss
   if (!cfg) throw new ShipitError('缺少 oss 上传配置')
   if (name.includes('/') || name.includes('\\') || name.includes('..')) {
     throw new ShipitError('非法名称: 不允许包含路径分隔符或..')

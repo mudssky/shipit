@@ -18,8 +18,8 @@ describe('release list 输出配置', () => {
 
   it('table 配置时使用 console.table', async () => {
     const { program } = await import('@/cli')
-    vi.doMock('@/config/shipit', () => ({
-      shipitConfig: {
+    vi.doMock('@/config/shipit', () => {
+      const shipitConfig = {
         artifact: {
           defaultPath: './dist/release.zip',
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -41,8 +41,9 @@ describe('release list 输出配置', () => {
           afterRelease: [],
           shell: 'powershell',
         },
-      },
-    }))
+      }
+      return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+    })
     await import('@/commands/release')
     const spyTable = vi.spyOn(console, 'table').mockImplementation(() => {})
     await (program as any).parseAsync([
@@ -59,8 +60,8 @@ describe('release list 输出配置', () => {
 
   it('默认 tsv 时使用 console.log 输出制表符', async () => {
     const { program } = await import('@/cli')
-    vi.doMock('@/config/shipit', () => ({
-      shipitConfig: {
+    vi.doMock('@/config/shipit', () => {
+      const shipitConfig = {
         artifact: {
           defaultPath: './dist/release.zip',
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -77,8 +78,9 @@ describe('release list 输出配置', () => {
           afterRelease: [],
           shell: 'powershell',
         },
-      },
-    }))
+      }
+      return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+    })
     await import('@/commands/release')
     const spyLog = vi.spyOn(console, 'log').mockImplementation(() => {})
     await (program as any).parseAsync([

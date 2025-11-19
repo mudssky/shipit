@@ -18,8 +18,8 @@ describe('release list 全局 TABLE_STYLE 回退', () => {
 
   it('当未设置 release.listOutputStyle 且无 --style 时，采用 GlobalEnv.TABLE_STYLE', async () => {
     const { program } = await import('@/cli')
-    vi.doMock('@/config/shipit', () => ({
-      shipitConfig: {
+    vi.doMock('@/config/shipit', () => {
+      const shipitConfig = {
         artifact: {
           defaultPath: './dist/release.zip',
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -36,8 +36,9 @@ describe('release list 全局 TABLE_STYLE 回退', () => {
           afterRelease: [],
           shell: 'powershell',
         },
-      },
-    }))
+      }
+      return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+    })
     vi.doMock('@/config', () => ({
       globalConfig: { TABLE_STYLE: 'table' },
     }))

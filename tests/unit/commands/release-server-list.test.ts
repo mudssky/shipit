@@ -15,28 +15,27 @@ vi.mock('@/providers/server', () => {
 
 // 使用默认配置代理，注入 server 配置
 vi.mock('@/config/shipit', () => {
-  return {
-    shipitConfig: {
-      providers: {
-        oss: { prefix: 'releases/', provider: 'aliyun', bucket: 'b' },
-        server: { baseUrl: 'https://api.example.com' },
-      },
-      upload: { defaultProvider: 'oss' },
-      release: {
-        defaultProvider: 'oss',
-        targetDir: '.',
-        listLimit: 10,
-        listOutputStyle: 'tsv',
-      },
-      hooks: {
-        beforeUpload: [],
-        afterUpload: [],
-        beforeRelease: [],
-        afterRelease: [],
-        shell: 'bash',
-      },
+  const shipitConfig = {
+    providers: {
+      oss: { prefix: 'releases/', provider: 'aliyun', bucket: 'b' },
+      server: { baseUrl: 'https://api.example.com' },
+    },
+    upload: { defaultProvider: 'oss' },
+    release: {
+      defaultProvider: 'oss',
+      targetDir: '.',
+      listLimit: 10,
+      listOutputStyle: 'tsv',
+    },
+    hooks: {
+      beforeUpload: [],
+      afterUpload: [],
+      beforeRelease: [],
+      afterRelease: [],
+      shell: 'bash',
     },
   }
+  return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
 })
 
 describe('release list with server provider', () => {

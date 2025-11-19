@@ -62,7 +62,7 @@ const ReleaseSchema = z.object({
   defaultProvider: z.enum(['server', 'oss', 'scp']).default('oss'),
   targetDir: z.string().default('.'),
   listLimit: z.number().default(10),
-  allowedTargetDirPrefix: z.string().optional(),
+  allowedTargetDirPrefix: z.union([z.string(), z.array(z.string())]).optional(),
   listOutputStyle: z.enum(['tsv', 'table']).optional(),
   listLargeThreshold: z.number().default(30),
   keepZipOnPublish: z.boolean().optional(),
@@ -123,6 +123,28 @@ const ShipitConfigSchema = z.object({
     afterRelease: [],
     shell: process.platform === 'win32' ? 'powershell' : 'bash',
   })),
+  projects: z
+    .record(
+      z.string(),
+      z
+        .object({
+          providers: ProvidersSchema.partial().optional(),
+          release: z
+            .object({
+              targetDir: z.string().optional(),
+              allowedTargetDirPrefix: z
+                .union([z.string(), z.array(z.string())])
+                .optional(),
+              listOutputStyle: z.enum(['tsv', 'table']).optional(),
+              keepZipOnPublish: z.boolean().optional(),
+            })
+            .partial()
+            .optional(),
+        })
+        .partial(),
+    )
+    .optional(),
+  projectsDefault: z.string().optional(),
 })
 
 export type ShipitConfig = z.infer<typeof ShipitConfigSchema>
@@ -174,6 +196,32 @@ export function getShipitConfigFilepath(): string | undefined {
     cachedConfig = loadShipitConfig()
   }
   return lastConfigFilepath
+}
+
+function pickActiveProjectName(
+  base: ShipitConfig,
+  preferred?: string,
+): string | undefined {
+  const fromPreferred = String(preferred || '').trim() || undefined
+  if (fromPreferred) return fromPreferred
+  const fromEnv = String(process.env.SHIPIT_PROJECT || '').trim() || undefined
+  if (fromEnv) return fromEnv
+  const fromDefault = String(base.projectsDefault || '').trim() || undefined
+  if (fromDefault) return fromDefault
+  const keys = base.projects ? Object.keys(base.projects) : []
+  return keys.length > 0 ? keys[0] : undefined
+}
+
+export function getEffectiveShipitConfig(projectName?: string): ShipitConfig {
+  const base = getShipitConfig()
+  const active = pickActiveProjectName(base, projectName)
+  if (!active || !base.projects || !base.projects[active]) return base
+  const proj = base.projects[active] as any
+  return {
+    ...base,
+    providers: { ...(base.providers as any), ...(proj.providers || {}) },
+    release: { ...(base.release as any), ...(proj.release || {}) },
+  } as ShipitConfig
 }
 
 export function validateShipitConfigDetailed(): {

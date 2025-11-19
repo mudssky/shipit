@@ -26,8 +26,8 @@ vi.mock('@/providers/oss', () => ({
   createOssProvider: () => ({ list, download }),
 }))
 
-vi.mock('@/config/shipit', () => ({
-  shipitConfig: {
+vi.mock('@/config/shipit', () => {
+  const shipitConfig = {
     providers: {
       oss: { prefix: 'releases/', provider: 'aliyun', bucket: 'b' },
     },
@@ -49,8 +49,9 @@ vi.mock('@/config/shipit', () => ({
       afterRelease: [],
       shell: 'bash',
     },
-  },
-}))
+  }
+  return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+})
 
 import '@/commands/release/index.ts'
 import { program } from '@/cli'

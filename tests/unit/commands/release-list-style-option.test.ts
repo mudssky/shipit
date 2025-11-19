@@ -18,8 +18,8 @@ describe('release list --style 选项覆盖输出模式', () => {
 
   it('传入 --style table 时使用 console.table', async () => {
     const { program } = await import('@/cli')
-    vi.doMock('@/config/shipit', () => ({
-      shipitConfig: {
+    vi.doMock('@/config/shipit', () => {
+      const shipitConfig = {
         artifact: {
           defaultPath: './dist/release.zip',
           nameTemplate: 'release-{yyyy}{MM}{dd}{HH}{mm}{ss}.zip',
@@ -41,8 +41,9 @@ describe('release list --style 选项覆盖输出模式', () => {
           afterRelease: [],
           shell: 'powershell',
         },
-      },
-    }))
+      }
+      return { shipitConfig, getEffectiveShipitConfig: () => shipitConfig }
+    })
     await import('@/commands/release')
     const spyTable = vi.spyOn(console, 'table').mockImplementation(() => {})
     await (program as any).parseAsync([

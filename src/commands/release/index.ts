@@ -5,7 +5,7 @@ import inquirer from 'inquirer'
 import os from 'os'
 import path from 'path'
 import { program } from '@/cli'
-import { shipitConfig } from '@/config/shipit'
+import { getEffectiveShipitConfig, shipitConfig } from '@/config/shipit'
 import { runHooks } from '@/hooks/executor'
 import { createOssProvider } from '@/providers/oss'
 import { createServerProvider } from '@/providers/server'
@@ -66,13 +66,14 @@ release
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)
     try {
-      const provider = options.provider || shipitConfig.release.defaultProvider
-      const limit = Number(options.limit || shipitConfig.release.listLimit)
+      const eff = getEffectiveShipitConfig(String(program.opts().project || ''))
+      const provider = options.provider || eff.release.defaultProvider
+      const limit = Number(options.limit || eff.release.listLimit)
       const autoInteractive = Boolean(process.stdout.isTTY && !process.env.CI)
       const interactiveEnabled =
         options.interactive ?? (autoInteractive && !options.noInteractive)
       if (provider === 'oss') {
-        const cfg = shipitConfig.providers.oss
+        const cfg = eff.providers.oss
         if (!cfg) throw new ShipitError('缺少 oss 配置')
         logger.start('正在从 OSS 获取列表')
         const oss = createOssProvider(cfg)
@@ -92,14 +93,14 @@ release
         })
         const finalStyle =
           options.style ??
-          shipitConfig.release.listOutputStyle ??
+          eff.release.listOutputStyle ??
           (await readGlobalTableStyle()) ??
           'tsv'
         logger.setTableStyle(finalStyle)
         logger.succeed('获取列表成功')
         logger.renderTable(rows)
         if (interactiveEnabled) {
-          const threshold = shipitConfig.release.listLargeThreshold
+          const threshold = eff.release.listLargeThreshold
           let pool = items
           if (Array.isArray(pool) && pool.length > threshold) {
             const kw = await inputText('请输入过滤关键词(可空)', '')
@@ -126,21 +127,14 @@ release
           }
           if (act === 'download') {
             let outputDir = String(
-              options.output || shipitConfig.release.targetDir || '.',
+              options.output || eff.release.targetDir || '.',
             )
-            const allowed = shipitConfig.release.allowedTargetDirPrefix
+            const allowed = eff.release.allowedTargetDirPrefix
             const resolvedOutputDir = resolveUserPath(outputDir)
-            const resolvedAllowed = allowed
-              ? resolveUserPath(String(allowed))
-              : undefined
-            if (
-              resolvedAllowed &&
-              !normalizePath(resolvedOutputDir).startsWith(
-                normalizePath(resolvedAllowed),
-              )
-            ) {
+            const okAllowed = allowedPrefixOk(allowed, resolvedOutputDir)
+            if (!okAllowed) {
               throw new ShipitError(
-                `下载目录不合法: 需以 ${allowed} 开头，当前为 ${resolvedOutputDir}`,
+                `下载目录不合法: 需以 ${String(allowed)} 开头，当前为 ${resolvedOutputDir}`,
               )
             }
             if (!fs.existsSync(resolvedOutputDir)) {
@@ -164,16 +158,12 @@ release
           }
           if (act === 'publish') {
             const enableHooks = options.hooks !== false
-            let targetDir = String(
-              options.dir || shipitConfig.release.targetDir,
-            )
-            const allowed = shipitConfig.release.allowedTargetDirPrefix
-            if (
-              allowed &&
-              !normalizePath(targetDir).startsWith(normalizePath(allowed))
-            ) {
+            let targetDir = String(options.dir || eff.release.targetDir)
+            const allowed = eff.release.allowedTargetDirPrefix
+            const okAllowed = allowedPrefixOk(allowed, targetDir)
+            if (!okAllowed) {
               throw new ShipitError(
-                `发布目录不合法: 需以 ${allowed} 开头，当前为 ${targetDir}`,
+                `发布目录不合法: 需以 ${String(allowed)} 开头，当前为 ${targetDir}`,
               )
             }
             if (options.dryRun) {
@@ -186,7 +176,7 @@ release
             }
             const key = String(picked.key)
             const keepZip = Boolean(
-              options.keepZip || shipitConfig.release.keepZipOnPublish,
+              options.keepZip || eff.release.keepZipOnPublish,
             )
             const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shipit-'))
             const dlFile = keepZip
@@ -194,12 +184,10 @@ release
               : path.join(tmpDir, path.basename(String(picked.key)))
             if (interactiveEnabled) {
               const dirInput = await inputDir(targetDir, (v) => {
-                const ok =
-                  !allowed ||
-                  normalizePath(v).startsWith(normalizePath(allowed))
+                const ok = allowedPrefixOk(allowed, v)
                 return ok
                   ? true
-                  : `发布目录不合法: 需以 ${allowed} 开头，当前为 ${v}`
+                  : `发布目录不合法: 需以 ${String(allowed)} 开头，当前为 ${v}`
               })
               if (dirInput) targetDir = dirInput
               const ok = options.yes
@@ -270,7 +258,7 @@ release
         return
       }
       if (provider === 'server') {
-        const cfg = shipitConfig.providers.server
+        const cfg = eff.providers.server
         if (!cfg) throw new ShipitError('缺少 server 配置')
         logger.start('正在从 Server 获取列表')
         const server = createServerProvider(cfg)
@@ -290,14 +278,14 @@ release
         })
         const finalStyle =
           options.style ??
-          shipitConfig.release.listOutputStyle ??
+          eff.release.listOutputStyle ??
           (await readGlobalTableStyle()) ??
           'tsv'
         logger.setTableStyle(finalStyle)
         logger.succeed('获取列表成功')
         logger.renderTable(rows)
         if (interactiveEnabled) {
-          const threshold = shipitConfig.release.listLargeThreshold
+          const threshold = eff.release.listLargeThreshold
           let pool = items
           if (Array.isArray(pool) && pool.length > threshold) {
             const kw = await inputText('请输入过滤关键词(可空)', '')
@@ -323,16 +311,14 @@ release
           }
           if (act === 'publish') {
             const enableHooks = options.hooks !== false
-            const targetDir = String(
-              options.dir || shipitConfig.release.targetDir,
+            const eff = getEffectiveShipitConfig(
+              String(program.opts().project || ''),
             )
-            const allowed = shipitConfig.release.allowedTargetDirPrefix
-            if (
-              allowed &&
-              !normalizePath(targetDir).startsWith(normalizePath(allowed))
-            ) {
+            const targetDir = String(options.dir || eff.release.targetDir)
+            const allowed = eff.release.allowedTargetDirPrefix
+            if (!allowedPrefixOk(allowed, targetDir)) {
               throw new ShipitError(
-                `发布目录不合法: 需以 ${allowed} 开头，当前为 ${targetDir}`,
+                `发布目录不合法: 需以 ${String(allowed)} 开头，当前为 ${targetDir}`,
               )
             }
             const ok = options.yes
@@ -438,9 +424,10 @@ release
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)
     try {
-      const provider = options.provider || shipitConfig.release.defaultProvider
-      const targetDir = String(options.dir || shipitConfig.release.targetDir)
-      const allowed = shipitConfig.release.allowedTargetDirPrefix
+      const eff = getEffectiveShipitConfig(String(program.opts().project || ''))
+      const provider = options.provider || eff.release.defaultProvider
+      const targetDir = String(options.dir || eff.release.targetDir)
+      const allowed = eff.release.allowedTargetDirPrefix
       const autoInteractive = Boolean(process.stdout.isTTY && !process.env.CI)
       const interactiveEnabled =
         options.interactive ?? (autoInteractive && !options.noInteractive)
@@ -460,11 +447,12 @@ release
             return String(ans.nm || '')
           })())
         const dirInput = await inputDir(targetDir, (v) => {
-          const ok =
-            !allowed || normalizePath(v).startsWith(normalizePath(allowed))
-          return ok ? true : `发布目录不合法: 需以 ${allowed} 开头，当前为 ${v}`
+          const ok = allowedPrefixOk(allowed, v)
+          return ok
+            ? true
+            : `发布目录不合法: 需以 ${String(allowed)} 开头，当前为 ${v}`
         })
-        const hooks = shipitConfig.hooks as any
+        const hooks = eff.hooks as any
         const stages = ['beforeRelease', 'afterRelease'] as const
         const summary = stages.map((st) => {
           const arr = (hooks as any)[st] as any[]
@@ -517,17 +505,14 @@ release
         name = pickedName
         ;(options as any).dir = dirInput
       }
-      if (
-        allowed &&
-        !normalizePath(targetDir).startsWith(normalizePath(allowed))
-      ) {
+      if (!allowedPrefixOk(allowed, targetDir)) {
         throw new ShipitError(
-          `发布目录不合法: 需以 ${allowed} 开头，当前为 ${targetDir}`,
+          `发布目录不合法: 需以 ${String(allowed)} 开头，当前为 ${targetDir}`,
         )
       }
       logger.start('正在发布')
       const enableHooks = options.hooks !== false
-      const hooksCfg = shipitConfig.hooks as any
+      const hooksCfg = eff.hooks as any
       const summarize = (
         stage: 'beforeRelease' | 'afterRelease',
       ): {
@@ -600,7 +585,7 @@ release
         return
       }
       if (provider === 'server') {
-        const cfg = shipitConfig.providers.server
+        const cfg = eff.providers.server
         if (!cfg) throw new ShipitError('缺少 server 配置')
         const server = createServerProvider(cfg)
         await server.publish(path.basename(String(name)), targetDir)
@@ -608,11 +593,11 @@ release
           `发布成功: ${path.basename(String(name))} → ${targetDir}`,
         )
       } else {
-        const cfg = shipitConfig.providers.oss
+        const cfg = eff.providers.oss
         if (!cfg) throw new ShipitError('缺少 oss 配置')
         const key = cfg.prefix ? `${cfg.prefix}${String(name)}` : String(name)
         const keepZip = Boolean(
-          (options as any).keepZip || shipitConfig.release.keepZipOnPublish,
+          (options as any).keepZip || eff.release.keepZipOnPublish,
         )
         const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shipit-'))
         const dlFile = keepZip
@@ -695,18 +680,19 @@ release
     const verbose = Boolean(options.verbose || program.opts().verbose)
     const logger = new Logger(verbose)
     try {
-      const provider = options.provider || shipitConfig.release.defaultProvider
+      const eff = getEffectiveShipitConfig(String(program.opts().project || ''))
+      const provider = options.provider || eff.release.defaultProvider
       if (provider !== 'oss') {
         throw new ShipitError(`未实现的下载 Provider: ${provider}`)
       }
-      const cfg = shipitConfig.providers.oss
+      const cfg = eff.providers.oss
       if (!cfg) throw new ShipitError('缺少 oss 配置')
       const autoInteractive = Boolean(process.stdout.isTTY && !process.env.CI)
       const interactiveEnabled = options.interactive ?? autoInteractive
       if (interactiveEnabled && !name) {
         logger.start('正在从 OSS 获取列表')
         const oss = createOssProvider(cfg)
-        const limit = Number(shipitConfig.release.listLimit)
+        const limit = Number(eff.release.listLimit)
         const items = (await oss.list(cfg.prefix ?? '', limit)).sort((a, b) => {
           const at = a.lastModified
             ? dayjs(String(a.lastModified)).valueOf()
@@ -717,7 +703,7 @@ release
           return bt - at
         })
         logger.succeed('获取列表成功')
-        const threshold = shipitConfig.release.listLargeThreshold
+        const threshold = eff.release.listLargeThreshold
         let pool = items
         if (Array.isArray(pool) && pool.length > threshold) {
           const kw = await inputText('请输入过滤关键词(可空)', '')
@@ -740,31 +726,22 @@ release
       if (!name) {
         throw new ShipitError('缺少下载名称')
       }
-      const outputDir = String(
-        options.output || shipitConfig.release.targetDir || '.',
-      )
-      const allowed = shipitConfig.release.allowedTargetDirPrefix
+      const outputDir = String(options.output || eff.release.targetDir || '.')
+      const allowed = eff.release.allowedTargetDirPrefix
       let finalOutputDir = outputDir
       if (interactiveEnabled) {
         const dirInput = await inputDir(outputDir, (v) => {
-          const ok =
-            !allowed || normalizePath(v).startsWith(normalizePath(allowed))
-          return ok ? true : `下载目录不合法: 需以 ${allowed} 开头，当前为 ${v}`
+          const ok = allowedPrefixOk(allowed, v)
+          return ok
+            ? true
+            : `下载目录不合法: 需以 ${String(allowed)} 开头，当前为 ${v}`
         })
         finalOutputDir = dirInput
       }
       const resolvedFinalOutputDir = resolveUserPath(finalOutputDir)
-      const resolvedAllowed = allowed
-        ? resolveUserPath(String(allowed))
-        : undefined
-      if (
-        resolvedAllowed &&
-        !normalizePath(resolvedFinalOutputDir).startsWith(
-          normalizePath(resolvedAllowed),
-        )
-      ) {
+      if (!allowedPrefixOk(allowed, resolvedFinalOutputDir)) {
         throw new ShipitError(
-          `下载目录不合法: 需以 ${allowed} 开头，当前为 ${resolvedFinalOutputDir}`,
+          `下载目录不合法: 需以 ${String(allowed)} 开头，当前为 ${resolvedFinalOutputDir}`,
         )
       }
       if (!fs.existsSync(resolvedFinalOutputDir)) {
@@ -806,6 +783,17 @@ function normalizePath(p: string): string {
   return path.resolve(p).replace(/\\/g, '/').toLowerCase()
 }
 
+function allowedPrefixOk(
+  allowed: string | string[] | undefined,
+  dir: string,
+): boolean {
+  if (!allowed) return true
+  const nd = normalizePath(dir)
+  if (Array.isArray(allowed))
+    return allowed.some((a) => nd.startsWith(normalizePath(String(a))))
+  return nd.startsWith(normalizePath(String(allowed)))
+}
+
 async function readGlobalTableStyle(): Promise<'tsv' | 'table' | undefined> {
   try {
     const mod: any = await import('@/config')
@@ -833,6 +821,8 @@ function resolveUserPath(p: string): string {
   )
   return path.resolve(out)
 }
+
+// 使用配置层的单点实现：getEffectiveShipitConfig
 
 async function unzipFile(zipPath: string, destDir: string): Promise<void> {
   if (!fs.existsSync(zipPath)) {
